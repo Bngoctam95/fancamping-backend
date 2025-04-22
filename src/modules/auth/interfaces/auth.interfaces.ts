@@ -1,18 +1,19 @@
 import { Types } from 'mongoose';
+import { UserRole } from '../../users/schemas/user.schema';
 
 export interface User {
-  _id: string | Types.ObjectId;
+  _id: Types.ObjectId;
   email: string;
   name: string;
-  role: string;
-  refreshToken?: string;
+  role: UserRole;
   password?: string;
+  refreshToken?: string;
 }
 
 export interface UserPayload {
+  _id: Types.ObjectId;
   email: string;
-  _id: string | Types.ObjectId;
-  role: string;
+  role: UserRole;
 }
 
 export interface TokenResponse {
@@ -20,7 +21,9 @@ export interface TokenResponse {
   refresh_token: string;
 }
 
-export interface LoginResponse extends TokenResponse {
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
   user: Omit<User, 'password' | 'refreshToken'>;
 }
 
