@@ -16,6 +16,7 @@ import {
   LoginResponse,
   RegisterDto,
 } from './interfaces/auth.interfaces';
+import { User as UserSchema, UserRole } from '../users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   async validateUser(email: string, password: string): Promise<User | null> {
     if (!password) {
@@ -44,19 +45,25 @@ export class AuthService {
       throw new UnauthorizedException('Invalid password');
     }
 
-    return {
+    // Convert to User interface
+    const userResponse: User = {
       _id: user._id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: user.role
     };
+
+    return userResponse;
   }
 
   async login(user: User): Promise<LoginResponse> {
-    console.log('Login user:', user); // Debug log
-
     if (!user || !user._id || !user.email || !user.role) {
-      console.error('Invalid user data:', user);
+      console.log('Invalid user data:', {
+        id: user?._id,
+        email: user?.email,
+        role: user?.role,
+        fullUser: user
+      });
       throw new UnauthorizedException('Invalid user data');
     }
 
@@ -83,7 +90,6 @@ export class AuthService {
       },
     };
 
-    console.log('Login response:', response); // Debug log
     return response;
   }
 
@@ -104,7 +110,7 @@ export class AuthService {
       const user = await this.usersService.create({
         ...userData,
         password: hashedPassword,
-        role: 'user',
+        role: UserRole.USER,
       });
 
       // Return token and user information
@@ -113,7 +119,6 @@ export class AuthService {
       if (error instanceof ConflictException) {
         throw error;
       }
-      console.error('Register error:', error);
       throw new UnauthorizedException('Registration failed');
     }
   }
@@ -149,7 +154,6 @@ export class AuthService {
 
       return tokens;
     } catch (error) {
-      console.error('Refresh token error:', error);
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -160,7 +164,6 @@ export class AuthService {
       await this.usersService.update(userId, { refreshToken: null });
       return { message: 'Logged out successfully' };
     } catch (error) {
-      console.error('Logout error:', error);
       throw new BadRequestException('Logout failed');
     }
   }
@@ -196,7 +199,6 @@ export class AuthService {
 
       return userInfo;
     } catch (error) {
-      console.error('Get user details error:', error);
       if (error instanceof NotFoundException) {
         throw error;
       }

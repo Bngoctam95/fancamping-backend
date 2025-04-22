@@ -1,35 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
+import { User, UserRole } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
 
   async createDefaultAdmin() {
     try {
-      // Check if admin already exists
-      const adminExists = await this.userModel.findOne({ role: 'admin' });
+      // Check if super admin already exists
+      const superAdminExists = await this.userModel.findOne({ role: UserRole.SUPER_ADMIN });
 
-      if (!adminExists) {
-        // Create admin
+      if (!superAdminExists) {
+        // Create super admin
         const hashedPassword = await bcrypt.hash('admin123', 10);
 
-        const admin = new this.userModel({
-          name: 'Admin',
-          email: 'admin@gmail.com',
+        const superAdmin = new this.userModel({
+          name: 'Super Admin',
+          email: 'superadmin@gmail.com',
           password: hashedPassword,
-          role: 'admin',
+          role: UserRole.SUPER_ADMIN,
           isActive: true,
+          phone: '0123456789',
+          avatar: null
         });
 
-        await admin.save();
-        console.log('Default admin created successfully');
+        await superAdmin.save();
       }
     } catch (error) {
-      console.error('Error creating default admin:', error);
+      console.error('Error creating default super admin:', error);
     }
   }
 }
