@@ -32,19 +32,8 @@ export class Product {
   @Prop({ type: [String], default: [] })
   slider: string[];
 
-  @Prop({
-    type: {
-      regular: Number,
-      weekend: Number,
-      deposit: Number,
-    },
-    required: true,
-  })
-  pricing: {
-    regular: number;
-    weekend?: number;
-    deposit?: number;
-  };
+  @Prop({ required: true, type: Number })
+  price: number;
 
   @Prop({
     type: {
@@ -91,7 +80,7 @@ export const ProductSchema = SchemaFactory.createForClass(Product);
 
 // Tạo index cho các trường thường dùng để tìm kiếm
 ProductSchema.index({ name: 'text', slug: 'text', tags: 'text' });
-ProductSchema.index({ 'pricing.regular': 1 });
+ProductSchema.index({ price: 1 });
 ProductSchema.index({ categoryId: 1 });
 ProductSchema.index({ isActive: 1 });
 ProductSchema.index({ status: 1 });
