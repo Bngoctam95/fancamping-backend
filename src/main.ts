@@ -15,11 +15,13 @@ async function bootstrap() {
   });
 
   // Enable validation
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Chỉ cho phép các properties được định nghĩa trong DTO
-    transform: true, // Tự động transform types
-    forbidNonWhitelisted: true, // Throw error nếu có properties không được định nghĩa
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Chỉ cho phép các properties được định nghĩa trong DTO
+      transform: true, // Tự động transform types
+      forbidNonWhitelisted: true, // Throw error nếu có properties không được định nghĩa
+    }),
+  );
 
   // Create default admin
   const adminService = app.get(AdminService);

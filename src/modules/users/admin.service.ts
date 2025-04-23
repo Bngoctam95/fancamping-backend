@@ -6,12 +6,14 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   async createDefaultAdmin() {
     try {
       // Check if super admin already exists
-      const superAdminExists = await this.userModel.findOne({ role: UserRole.SUPER_ADMIN });
+      const superAdminExists = await this.userModel.findOne({
+        role: UserRole.SUPER_ADMIN,
+      });
 
       if (!superAdminExists) {
         // Create super admin
@@ -24,7 +26,7 @@ export class AdminService {
           role: UserRole.SUPER_ADMIN,
           isActive: true,
           phone: '0123456789',
-          avatar: null
+          avatar: null,
         });
 
         await superAdmin.save();

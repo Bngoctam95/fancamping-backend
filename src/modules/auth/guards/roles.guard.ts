@@ -1,31 +1,43 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../users/schemas/user.schema';
+import { Request } from 'express';
+
+interface RequestUser {
+  role: UserRole;
+}
+
+interface AuthenticatedRequest extends Request {
+  user: RequestUser;
+}
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) { }
+  constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.get<UserRole[]>('roles', context.getHandler());
+    const requiredRoles = this.reflector.get<UserRole[]>(
+      'roles',
+      context.getHandler(),
+    );
     if (!requiredRoles) {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
-    if (!user) return false;
+    const request = context
+      .switchToHttp()
+      .getRequest<Request>() as AuthenticatedRequest;
+    if (!request.user) return false;
 
-
-    const roleHierarchy = {
+    const roleHierarchy: Record<UserRole, number> = {
       [UserRole.SUPER_ADMIN]: 4,
       [UserRole.ADMIN]: 3,
       [UserRole.MOD]: 2,
       [UserRole.USER]: 1,
     };
 
+    const userRoleLevel = roleHierarchy[request.user.role];
 
-    const userRoleLevel = roleHierarchy[user.role];
-
-    return requiredRoles.some(role => userRoleLevel >= roleHierarchy[role]);
+    return requiredRoles.some((role) => userRoleLevel >= roleHierarchy[role]);
   }
 }

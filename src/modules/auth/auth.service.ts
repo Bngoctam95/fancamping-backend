@@ -16,7 +16,7 @@ import {
   LoginResponse,
   RegisterDto,
 } from './interfaces/auth.interfaces';
-import { User as UserSchema, UserRole } from '../users/schemas/user.schema';
+import { UserRole } from '../users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +24,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) { }
+  ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
     if (!password) {
@@ -50,7 +50,7 @@ export class AuthService {
       _id: user._id,
       email: user.email,
       name: user.name,
-      role: user.role
+      role: user.role,
     };
 
     return userResponse;
@@ -62,7 +62,7 @@ export class AuthService {
         id: user?._id,
         email: user?.email,
         role: user?.role,
-        fullUser: user
+        fullUser: user,
       });
       throw new UnauthorizedException('Invalid user data');
     }
@@ -153,7 +153,7 @@ export class AuthService {
       await this.updateRefreshToken(user._id.toString(), tokens.refresh_token);
 
       return tokens;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -163,7 +163,7 @@ export class AuthService {
       // Xóa refresh token khỏi database
       await this.usersService.update(userId, { refreshToken: null });
       return { message: 'Logged out successfully' };
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Logout failed');
     }
   }
