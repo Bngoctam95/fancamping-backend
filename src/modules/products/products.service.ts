@@ -91,14 +91,14 @@ export class ProductsService {
 
     // Lọc theo giá
     if (minPrice !== undefined || maxPrice !== undefined) {
-      const priceFilter: PriceFilter = {};
+      const priceFilter: { $gte?: number; $lte?: number } = {};
       if (minPrice !== undefined) {
         priceFilter.$gte = minPrice;
       }
       if (maxPrice !== undefined) {
         priceFilter.$lte = maxPrice;
       }
-      query['pricing.regular'] = priceFilter;
+      query.price = priceFilter;
     }
 
     // Lọc theo trạng thái
@@ -230,14 +230,26 @@ export class ProductsService {
     return newCategory.save();
   }
 
-  async findAllCategories(isActive?: boolean): Promise<Category[]> {
-    const query: FilterQuery<CategoryDocument> = {};
+  async findAllCategories(isActive?: boolean | string): Promise<Category[]> {
+    try {
+      const query: FilterQuery<CategoryDocument> = {};
 
-    if (isActive !== undefined) {
-      query.isActive = isActive;
+      // Chuyển đổi isActive từ string sang boolean
+      if (isActive !== undefined) {
+        // Convert string 'true'/'false' to boolean
+        query.isActive = isActive === true || isActive === 'true';
+      }
+
+      const categories = await this.categoryModel
+        .find(query)
+        .sort({ order: 1, name: 1 })
+        .exec();
+
+      return categories;
+    } catch (error) {
+      console.error('Error in findAllCategories:', error);
+      throw error;
     }
-
-    return this.categoryModel.find(query).sort({ order: 1, name: 1 }).exec();
   }
 
   async findCategoryById(id: string): Promise<Category> {

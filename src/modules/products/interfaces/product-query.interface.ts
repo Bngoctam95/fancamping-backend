@@ -1,4 +1,4 @@
-import { Product, ProductStatus } from '../schemas/product.schema';
+import { ProductStatus } from '../schemas/product.schema';
 
 export interface ProductQueryParams {
   page?: number;
@@ -15,7 +15,7 @@ export interface ProductQueryParams {
 }
 
 export interface PaginatedProducts {
-  items: Product[];
+  items: any[];
   total: number;
   page: number;
   limit: number;

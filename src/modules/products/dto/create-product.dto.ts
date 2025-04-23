@@ -12,22 +12,6 @@ import {
 import { Type } from 'class-transformer';
 import { ProductStatus } from '../schemas/product.schema';
 
-class PricingDto {
-  @IsNumber()
-  @Min(0)
-  regular: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  weekend?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  deposit?: number;
-}
-
 class InventoryDto {
   @IsNumber()
   @Min(0)
@@ -60,9 +44,9 @@ export class CreateProductDto {
   @IsOptional()
   slider?: string[];
 
-  @ValidateNested()
-  @Type(() => PricingDto)
-  pricing: PricingDto;
+  @IsNumber()
+  @Min(0)
+  price: number;
 
   @ValidateNested()
   @Type(() => InventoryDto)

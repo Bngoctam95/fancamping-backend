@@ -29,6 +29,46 @@ import {
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  // Category Routes
+  @Post('categories')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
+    return this.productsService.createCategory(createCategoryDto);
+  }
+
+  @Get('categories')
+  async findAllCategories(@Query('isActive') isActive?: boolean) {
+    return this.productsService.findAllCategories(isActive);
+  }
+
+  @Get('categories/:id')
+  async findCategoryById(@Param('id') id: string) {
+    return this.productsService.findCategoryById(id);
+  }
+
+  @Get('categories/slug/:slug')
+  async findCategoryBySlug(@Param('slug') slug: string) {
+    return this.productsService.findCategoryBySlug(slug);
+  }
+
+  @Put('categories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+  ) {
+    return this.productsService.updateCategory(id, updateCategoryDto);
+  }
+
+  @Delete('categories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  async removeCategory(@Param('id') id: string) {
+    return this.productsService.removeCategory(id);
+  }
+
   // Product Routes
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -68,14 +108,14 @@ export class ProductsController {
     return this.productsService.findAllProducts(queryParams);
   }
 
-  @Get(':id')
-  async findProductById(@Param('id') id: string) {
-    return this.productsService.findProductById(id);
-  }
-
   @Get('slug/:slug')
   async findProductBySlug(@Param('slug') slug: string) {
     return this.productsService.findProductBySlug(slug);
+  }
+
+  @Get(':id')
+  async findProductById(@Param('id') id: string) {
+    return this.productsService.findProductById(id);
   }
 
   @Put(':id')
@@ -93,45 +133,5 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   async removeProduct(@Param('id') id: string) {
     return this.productsService.removeProduct(id);
-  }
-
-  // Category Routes
-  @Post('categories')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.productsService.createCategory(createCategoryDto);
-  }
-
-  @Get('categories')
-  async findAllCategories(@Query('isActive') isActive?: boolean) {
-    return this.productsService.findAllCategories(isActive);
-  }
-
-  @Get('categories/:id')
-  async findCategoryById(@Param('id') id: string) {
-    return this.productsService.findCategoryById(id);
-  }
-
-  @Get('categories/slug/:slug')
-  async findCategoryBySlug(@Param('slug') slug: string) {
-    return this.productsService.findCategoryBySlug(slug);
-  }
-
-  @Put('categories/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async updateCategory(
-    @Param('id') id: string,
-    @Body() updateCategoryDto: UpdateCategoryDto,
-  ) {
-    return this.productsService.updateCategory(id, updateCategoryDto);
-  }
-
-  @Delete('categories/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async removeCategory(@Param('id') id: string) {
-    return this.productsService.removeCategory(id);
   }
 }
