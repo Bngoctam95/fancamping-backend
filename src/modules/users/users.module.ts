@@ -13,4 +13,4 @@ import { AdminService } from './admin.service';
   providers: [UsersService, AdminService],
   exports: [UsersService, AdminService],
 })
-export class UsersModule { }
+export class UsersModule {}

@@ -7,7 +7,7 @@ export enum UserRole {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   MOD = 'mod',
-  USER = 'user'
+  USER = 'user',
 }
 
 @Schema({ timestamps: true })
@@ -26,7 +26,7 @@ export class User {
   @Prop({
     type: String,
     enum: UserRole,
-    default: UserRole.USER
+    default: UserRole.USER,
   })
   role: UserRole;
 

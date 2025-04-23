@@ -34,7 +34,7 @@ interface RequestWithUser extends Request {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async register(@Body() userData: RegisterDto): Promise<LoginResponse> {
@@ -74,7 +74,9 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Request() req: RequestWithUser): Promise<Omit<User, 'password' | 'refreshToken'>> {
+  async getProfile(
+    @Request() req: RequestWithUser,
+  ): Promise<Omit<User, 'password' | 'refreshToken'>> {
     return this.authService.getUserDetails(req.user._id.toString());
   }
 }
