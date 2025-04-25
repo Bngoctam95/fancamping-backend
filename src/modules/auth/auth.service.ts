@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  HttpStatus,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -16,7 +17,8 @@ import {
   LoginResponse,
   RegisterDto,
 } from './interfaces/auth.interfaces';
-import { UserRole } from '../users/schemas/user.schema';
+import { UserRole } from '../users/enums/user-role.enum';
+import { ApiResponse } from '../../interfaces/api-response.interface';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +26,8 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+    /* eslint-disable */
+  ) { }
 
   async validateUser(email: string, password: string): Promise<User | null> {
     if (!password) {
@@ -51,12 +54,17 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
+      avatar: user.avatar,
+      phone: user.phone,
+      isActive: user.isActive,
     };
 
     return userResponse;
   }
 
-  async login(user: User): Promise<LoginResponse> {
+  async login(
+    user: User,
+  ): Promise<ApiResponse<Omit<LoginResponse, 'refresh_token'>>> {
     if (!user || !user._id || !user.email || !user.role) {
       console.log('Invalid user data:', {
         id: user?._id,
@@ -79,21 +87,31 @@ export class AuthService {
     // Lưu refresh token vào database
     await this.updateRefreshToken(user._id.toString(), tokens.refresh_token);
 
-    const response: LoginResponse = {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      user: {
-        _id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+    // Lấy thông tin đầy đủ của user
+    const userDetails = await this.usersService.findOne(user._id.toString());
+
+    // Format lại response theo cấu trúc mới
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Login successful',
+      data: {
+        access_token: tokens.access_token,
+        user: {
+          _id: userDetails._id,
+          email: userDetails.email,
+          name: userDetails.name,
+          role: userDetails.role,
+          avatar: userDetails.avatar || undefined,
+          phone: userDetails.phone || undefined,
+          isActive: userDetails.isActive,
+        },
       },
     };
-
-    return response;
   }
 
-  async register(userData: RegisterDto): Promise<LoginResponse> {
+  async register(
+    userData: RegisterDto,
+  ): Promise<ApiResponse<Omit<LoginResponse, 'refresh_token'>>> {
     try {
       // Check if user already exists
       const emailExists = await this.usersService.checkEmailExists(
@@ -113,8 +131,32 @@ export class AuthService {
         role: UserRole.USER,
       });
 
-      // Return token and user information
-      return this.login(user as User);
+      // Đã có user, tạo token và format response
+      const payload: UserPayload = {
+        email: user.email,
+        _id: user._id,
+        role: user.role,
+      };
+
+      const tokens = await this.getTokens(payload);
+      await this.updateRefreshToken(user._id.toString(), tokens.refresh_token);
+
+      return {
+        statusCode: HttpStatus.CREATED,
+        message: 'User registered successfully',
+        data: {
+          access_token: tokens.access_token,
+          user: {
+            _id: user._id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            avatar: user.avatar || undefined,
+            phone: user.phone || undefined,
+            isActive: user.isActive,
+          },
+        },
+      };
     } catch (error) {
       if (error instanceof ConflictException) {
         throw error;
@@ -126,7 +168,7 @@ export class AuthService {
   async refreshTokens(
     userId: string,
     refreshToken: string,
-  ): Promise<TokenResponse> {
+  ): Promise<ApiResponse<{ access_token: string }>> {
     try {
       const user = await this.usersService.findOne(userId);
 
@@ -152,17 +194,30 @@ export class AuthService {
       const tokens = await this.getTokens(payload);
       await this.updateRefreshToken(user._id.toString(), tokens.refresh_token);
 
-      return tokens;
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Token refreshed successfully',
+        data: {
+          access_token: tokens.access_token,
+        },
+      };
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async logout(userId: string): Promise<{ message: string }> {
+  async logout(userId: string): Promise<ApiResponse<{ message: string }>> {
     try {
       // Xóa refresh token khỏi database
       await this.usersService.update(userId, { refreshToken: null });
-      return { message: 'Logged out successfully' };
+
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Logged out successfully',
+        data: {
+          message: 'Logged out successfully',
+        },
+      };
     } catch {
       throw new BadRequestException('Logout failed');
     }
@@ -181,7 +236,7 @@ export class AuthService {
 
   async getUserDetails(
     userId: string,
-  ): Promise<Omit<User, 'password' | 'refreshToken'>> {
+  ): Promise<ApiResponse<Omit<User, 'password' | 'refreshToken'>>> {
     try {
       const user = await this.usersService.findOne(userId);
 
@@ -195,9 +250,16 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        avatar: user.avatar || undefined,
+        phone: user.phone || undefined,
+        isActive: user.isActive,
       };
 
-      return userInfo;
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'User details retrieved successfully',
+        data: userInfo,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

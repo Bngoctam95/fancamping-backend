@@ -1,4 +1,5 @@
-import { User, UserRole } from '../schemas/user.schema';
+import { User } from '../schemas/user.schema';
+import { UserRole } from '../enums/user-role.enum';
 
 export interface UserQueryParams {
   page?: number;

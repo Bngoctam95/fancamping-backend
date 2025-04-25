@@ -4,5 +4,9 @@ export enum OrderStatus {
   IN_PROGRESS = 'In Progress',
   COMPLETED = 'Completed',
   CANCELLED = 'Cancelled',
-  EXPIRED = 'Expired',
+}
+
+export enum PaymentStatus {
+  PENDING = 'Pending',
+  DONE = 'Done',
 }

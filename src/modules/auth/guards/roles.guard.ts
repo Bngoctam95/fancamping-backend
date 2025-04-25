@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '../../users/schemas/user.schema';
+import { UserRole } from '../../users/enums/user-role.enum';
 import { Request } from 'express';
 
 interface RequestUser {
