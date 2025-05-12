@@ -21,31 +21,32 @@ import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 interface RequestWithUser extends Request {
   user: {
     _id: Types.ObjectId;
-    userId: string;
+    email: string;
+    role: UserRole;
   };
 }
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
   async create(
     @Request() req: RequestWithUser,
     @Body() createOrderDto: CreateOrderDto,
   ) {
-    return this.ordersService.create(req.user.userId, createOrderDto);
+    return this.ordersService.create(req.user._id.toString(), createOrderDto);
   }
 
   @Get()
   async findAll(@Request() req: RequestWithUser) {
-    return this.ordersService.findAll(req.user.userId);
+    return this.ordersService.findAll(req.user._id.toString());
   }
 
   @Get(':id')
   async findOne(@Request() req: RequestWithUser, @Param('id') id: string) {
-    return this.ordersService.findOne(req.user.userId, id);
+    return this.ordersService.findOne(req.user._id.toString(), id);
   }
 
   @Put(':id/pick-up')

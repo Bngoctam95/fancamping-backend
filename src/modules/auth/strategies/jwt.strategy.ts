@@ -36,7 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      userId: user._id.toString(),
+      _id: user._id,
       email: user.email,
       role: user.role,
     };

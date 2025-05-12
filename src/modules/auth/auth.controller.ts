@@ -53,7 +53,7 @@ const REFRESH_TOKEN_COOKIE_CONFIG = {
 @Controller('auth')
 export class AuthController {
   /* eslint-disable */
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -124,14 +124,13 @@ export class AuthController {
     @Request() req: RequestWithUser & RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiResponse<any>> {
-    const userId = req.user._id.toString();
     const refreshToken = req.cookies?.refresh_token || req.user.refreshToken;
 
     if (!refreshToken) {
       throw new BadRequestException('Refresh token is required');
     }
 
-    const result = await this.authService.refreshTokens(userId, refreshToken);
+    const result = await this.authService.refreshTokens(req.user._id.toString(), refreshToken);
 
     // Đặt refresh token mới vào cookie nếu có
     if ((result.data as any).refresh_token) {
