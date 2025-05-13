@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  HttpStatus,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -19,11 +20,13 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { ProductStatus } from './schemas/product.schema';
+import { ProductStatus, Product } from './schemas/product.schema';
+import { Category } from './schemas/category.schema';
 import {
   ProductQueryParams,
   PaginatedProducts,
 } from './interfaces/product-query.interface';
+import { ApiResponse } from '../../interfaces/api-response.interface';
 
 @Controller('products')
 export class ProductsController {
@@ -33,23 +36,56 @@ export class ProductsController {
   @Post('categories')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.productsService.createCategory(createCategoryDto);
+  async createCategory(
+    @Body() createCategoryDto: CreateCategoryDto,
+  ): Promise<ApiResponse<Category>> {
+    const category =
+      await this.productsService.createCategory(createCategoryDto);
+
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Tạo danh mục thành công',
+      data: category,
+    };
   }
 
   @Get('categories')
-  async findAllCategories(@Query('isActive') isActive?: boolean) {
-    return this.productsService.findAllCategories(isActive);
+  async findAllCategories(
+    @Query('isActive') isActive?: boolean,
+  ): Promise<ApiResponse<Category[]>> {
+    const categories = await this.productsService.findAllCategories(isActive);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách danh mục thành công',
+      data: categories,
+    };
   }
 
   @Get('categories/:id')
-  async findCategoryById(@Param('id') id: string) {
-    return this.productsService.findCategoryById(id);
+  async findCategoryById(
+    @Param('id') id: string,
+  ): Promise<ApiResponse<Category>> {
+    const category = await this.productsService.findCategoryById(id);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy thông tin danh mục thành công',
+      data: category,
+    };
   }
 
   @Get('categories/slug/:slug')
-  async findCategoryBySlug(@Param('slug') slug: string) {
-    return this.productsService.findCategoryBySlug(slug);
+  async findCategoryBySlug(
+    @Param('slug') slug: string,
+  ): Promise<ApiResponse<Category>> {
+    const category = await this.productsService.findCategoryBySlug(slug);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy thông tin danh mục thành công',
+      data: category,
+    };
   }
 
   @Put('categories/:id')
@@ -58,23 +94,48 @@ export class ProductsController {
   async updateCategory(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
-  ) {
-    return this.productsService.updateCategory(id, updateCategoryDto);
+  ): Promise<ApiResponse<Category>> {
+    const category = await this.productsService.updateCategory(
+      id,
+      updateCategoryDto,
+    );
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Cập nhật danh mục thành công',
+      data: category,
+    };
   }
 
   @Delete('categories/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async removeCategory(@Param('id') id: string) {
-    return this.productsService.removeCategory(id);
+  async removeCategory(
+    @Param('id') id: string,
+  ): Promise<ApiResponse<Category>> {
+    const category = await this.productsService.removeCategory(id);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Xóa danh mục thành công',
+      data: category,
+    };
   }
 
   // Product Routes
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.createProduct(createProductDto);
+  async createProduct(
+    @Body() createProductDto: CreateProductDto,
+  ): Promise<ApiResponse<Product>> {
+    const product = await this.productsService.createProduct(createProductDto);
+
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Tạo sản phẩm thành công',
+      data: product,
+    };
   }
 
   @Get()
@@ -90,7 +151,7 @@ export class ProductsController {
     @Query('tags') tags?: string[],
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
-  ): Promise<PaginatedProducts> {
+  ): Promise<ApiResponse<PaginatedProducts>> {
     const queryParams: ProductQueryParams = {
       page: page ? +page : 1,
       limit: limit ? +limit : 10,
@@ -105,17 +166,39 @@ export class ProductsController {
       sortOrder,
     };
 
-    return this.productsService.findAllProducts(queryParams);
+    const products = await this.productsService.findAllProducts(queryParams);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách sản phẩm thành công',
+      data: products,
+    };
   }
 
   @Get('slug/:slug')
-  async findProductBySlug(@Param('slug') slug: string) {
-    return this.productsService.findProductBySlug(slug);
+  async findProductBySlug(
+    @Param('slug') slug: string,
+  ): Promise<ApiResponse<Product>> {
+    const product = await this.productsService.findProductBySlug(slug);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy thông tin sản phẩm thành công',
+      data: product,
+    };
   }
 
   @Get(':id')
-  async findProductById(@Param('id') id: string) {
-    return this.productsService.findProductById(id);
+  async findProductById(
+    @Param('id') id: string,
+  ): Promise<ApiResponse<Product>> {
+    const product = await this.productsService.findProductById(id);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy thông tin sản phẩm thành công',
+      data: product,
+    };
   }
 
   @Put(':id')
@@ -124,14 +207,29 @@ export class ProductsController {
   async updateProduct(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
-  ) {
-    return this.productsService.updateProduct(id, updateProductDto);
+  ): Promise<ApiResponse<Product>> {
+    const product = await this.productsService.updateProduct(
+      id,
+      updateProductDto,
+    );
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Cập nhật sản phẩm thành công',
+      data: product,
+    };
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async removeProduct(@Param('id') id: string) {
-    return this.productsService.removeProduct(id);
+  async removeProduct(@Param('id') id: string): Promise<ApiResponse<Product>> {
+    const product = await this.productsService.removeProduct(id);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Xóa sản phẩm thành công',
+      data: product,
+    };
   }
 }
