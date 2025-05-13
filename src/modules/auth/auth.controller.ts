@@ -21,7 +21,6 @@ import { RegisterDto, User } from './interfaces/auth.interfaces';
 import { UserRole } from '../users/enums/user-role.enum';
 import { ApiResponse } from '../../interfaces/api-response.interface';
 
-// Interface định nghĩa kiểu dữ liệu RequestWithUser
 interface RequestWithUser extends Request {
   user: {
     _id: Types.ObjectId;
@@ -41,19 +40,18 @@ interface RequestWithCookies extends Request {
   };
 }
 
-// Cấu hình cookie
 const REFRESH_TOKEN_COOKIE_CONFIG = {
   httpOnly: true,
-  secure: process.env.NODE_ENV !== 'development', // true trong production
+  secure: process.env.NODE_ENV !== 'development',
   sameSite: 'strict' as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+  maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/auth/refresh',
 };
 
 @Controller('auth')
 export class AuthController {
   /* eslint-disable */
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -63,14 +61,12 @@ export class AuthController {
   ): Promise<ApiResponse<any>> {
     const result = await this.authService.register(userData);
 
-    // Đặt refresh token vào cookie
     res.cookie(
       'refresh_token',
       (result.data as any).refresh_token,
       REFRESH_TOKEN_COOKIE_CONFIG,
     );
 
-    // Xóa refresh_token từ response data
     delete (result.data as any).refresh_token;
 
     return result;
@@ -130,7 +126,10 @@ export class AuthController {
       throw new BadRequestException('Refresh token is required');
     }
 
-    const result = await this.authService.refreshTokens(req.user._id.toString(), refreshToken);
+    const result = await this.authService.refreshTokens(
+      req.user._id.toString(),
+      refreshToken,
+    );
 
     // Đặt refresh token mới vào cookie nếu có
     if ((result.data as any).refresh_token) {

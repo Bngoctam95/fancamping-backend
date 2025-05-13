@@ -20,7 +20,9 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
+  async create(
+    createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password' | 'refreshToken'>> {
     // Kiểm tra email đã tồn tại chưa
     const existingUser = await this.userModel.findOne({
       email: createUserDto.email,
@@ -42,8 +44,12 @@ export class UsersService {
       // Lưu user và trả về kết quả (loại bỏ password)
       const savedUser = await newUser.save();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...userWithoutPassword } = savedUser.toObject();
-      return userWithoutPassword as Omit<User, 'password'>;
+      const { password, refreshToken, ...userWithoutSensitiveInfo } =
+        savedUser.toObject();
+      return userWithoutSensitiveInfo as Omit<
+        User,
+        'password' | 'refreshToken'
+      >;
     } catch {
       throw new BadRequestException('Could not create user');
     }

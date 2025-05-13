@@ -11,6 +11,7 @@ import {
   Request,
   NotFoundException,
   Query,
+  HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -25,6 +26,8 @@ import {
 } from './interfaces/user-query.interface';
 import { Request as ExpressRequest } from 'express';
 import { Types } from 'mongoose';
+import { ApiResponse } from '../../interfaces/api-response.interface';
+import { User } from './schemas/user.schema';
 
 // Interface cho Request với thông tin user
 interface RequestWithUser extends ExpressRequest {
@@ -45,7 +48,7 @@ export class UsersController {
   async create(
     @Request() req: RequestWithUser,
     @Body() createUserDto: CreateUserDto,
-  ) {
+  ): Promise<ApiResponse<Omit<User, 'password' | 'refreshToken'>>> {
     const currentUser = req.user;
 
     // Kiểm tra quyền tạo user dựa vào role
@@ -74,7 +77,13 @@ export class UsersController {
       createUserDto.role = UserRole.USER;
     }
 
-    return this.usersService.create(createUserDto);
+    const userData = await this.usersService.create(createUserDto);
+
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Tạo người dùng thành công',
+      data: userData,
+    };
   }
 
   @Get()
@@ -86,7 +95,7 @@ export class UsersController {
     @Query('search') search?: string,
     @Query('role') role?: UserRole,
     @Query('isActive') isActive?: string,
-  ): Promise<PaginatedUsers> {
+  ): Promise<ApiResponse<PaginatedUsers>> {
     const currentUser = req.user;
 
     // Parse isActive query param
@@ -104,21 +113,38 @@ export class UsersController {
     };
 
     // Lấy danh sách user với filter theo role
-    return await this.usersService.findAllWithFilters(
+    const users = await this.usersService.findAllWithFilters(
       currentUser.role,
       queryParams,
     );
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách người dùng thành công',
+      data: users,
+    };
   }
 
   @Get('me')
-  async getProfile(@Request() req: RequestWithUser) {
+  async getProfile(
+    @Request() req: RequestWithUser,
+  ): Promise<ApiResponse<Omit<User, 'password'>>> {
     const userId = req.user._id.toString();
-    return this.usersService.findOne(userId);
+    const user = await this.usersService.findOne(userId);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy thông tin người dùng thành công',
+      data: user,
+    };
   }
 
   @Get(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MOD)
-  async findOne(@Request() req: RequestWithUser, @Param('id') id: string) {
+  async findOne(
+    @Request() req: RequestWithUser,
+    @Param('id') id: string,
+  ): Promise<ApiResponse<Omit<User, 'password'>>> {
     const currentUser = req.user;
     const userToView = await this.usersService.findOne(id);
 
@@ -139,7 +165,11 @@ export class UsersController {
       }
     }
 
-    return userToView;
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lấy thông tin người dùng thành công',
+      data: userToView,
+    };
   }
 
   @Put(':id')
@@ -147,7 +177,7 @@ export class UsersController {
     @Request() req: RequestWithUser,
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ) {
+  ): Promise<ApiResponse<Omit<User, 'password'>>> {
     const currentUser = req.user;
     const userToUpdate = await this.usersService.findOne(id);
 
@@ -214,11 +244,20 @@ export class UsersController {
       }
     }
 
-    return this.usersService.update(id, updateUserDto);
+    const updatedUser = await this.usersService.update(id, updateUserDto);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Cập nhật thông tin người dùng thành công',
+      data: updatedUser,
+    };
   }
 
   @Delete(':id')
-  async remove(@Request() req: RequestWithUser, @Param('id') id: string) {
+  async remove(
+    @Request() req: RequestWithUser,
+    @Param('id') id: string,
+  ): Promise<ApiResponse<Omit<User, 'password'>>> {
     const currentUser = req.user;
 
     // Nếu không phải là ADMIN/SUPER_ADMIN thì chỉ được xóa tài khoản của chính mình
@@ -244,6 +283,12 @@ export class UsersController {
       throw new ForbiddenException('ADMIN cannot delete other ADMIN accounts');
     }
 
-    return this.usersService.remove(id);
+    const deletedUser = await this.usersService.remove(id);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Xóa người dùng thành công',
+      data: deletedUser,
+    };
   }
 }
