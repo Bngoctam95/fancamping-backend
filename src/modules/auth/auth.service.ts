@@ -19,6 +19,7 @@ import {
 } from './interfaces/auth.interfaces';
 import { UserRole } from '../users/enums/user-role.enum';
 import { ApiResponse } from '../../interfaces/api-response.interface';
+import { AUTH_MESSAGE_KEYS } from './constants/message-keys';
 
 @Injectable()
 export class AuthService {
@@ -31,21 +32,33 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<User | null> {
     if (!password) {
-      throw new UnauthorizedException('Password is required');
+      throw new UnauthorizedException({
+        message: 'Password is required',
+        message_key: AUTH_MESSAGE_KEYS.PASSWORD_REQUIRED,
+      });
     }
 
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException({
+        message: 'User not found',
+        message_key: AUTH_MESSAGE_KEYS.USER_NOT_FOUND,
+      });
     }
 
     if (!user.password) {
-      throw new UnauthorizedException('User password is not set');
+      throw new UnauthorizedException({
+        message: 'User password is not set',
+        message_key: AUTH_MESSAGE_KEYS.PASSWORD_NOT_SET,
+      });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new UnauthorizedException({
+        message: 'Invalid password',
+        message_key: AUTH_MESSAGE_KEYS.INVALID_PASSWORD,
+      });
     }
 
     // Convert to User interface
@@ -72,7 +85,10 @@ export class AuthService {
         role: user?.role,
         fullUser: user,
       });
-      throw new UnauthorizedException('Invalid user data');
+      throw new UnauthorizedException({
+        message: 'Invalid user data',
+        message_key: AUTH_MESSAGE_KEYS.INVALID_USER_DATA,
+      });
     }
 
     const payload: UserPayload = {
@@ -94,6 +110,7 @@ export class AuthService {
     return {
       statusCode: HttpStatus.OK,
       message: 'Login successful',
+      message_key: AUTH_MESSAGE_KEYS.LOGIN_SUCCESS,
       data: {
         access_token: tokens.access_token,
         user: {
@@ -118,7 +135,10 @@ export class AuthService {
         userData.email,
       );
       if (emailExists) {
-        throw new ConflictException('Email already exists');
+        throw new ConflictException({
+          message: 'Email already exists',
+          message_key: AUTH_MESSAGE_KEYS.EMAIL_ALREADY_EXISTS,
+        });
       }
 
       // Hash password
@@ -144,6 +164,7 @@ export class AuthService {
       return {
         statusCode: HttpStatus.CREATED,
         message: 'User registered successfully',
+        message_key: AUTH_MESSAGE_KEYS.REGISTER_SUCCESS,
         data: {
           access_token: tokens.access_token,
           user: {
@@ -161,7 +182,10 @@ export class AuthService {
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new UnauthorizedException('Registration failed');
+      throw new UnauthorizedException({
+        message: 'Registration failed',
+        message_key: AUTH_MESSAGE_KEYS.REGISTER_FAILURE,
+      });
     }
   }
 
@@ -173,7 +197,10 @@ export class AuthService {
       const user = await this.usersService.findOne(userId);
 
       if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('Access Denied');
+        throw new UnauthorizedException({
+          message: 'Access Denied',
+          message_key: AUTH_MESSAGE_KEYS.ACCESS_DENIED,
+        });
       }
 
       const refreshTokenMatches = await bcrypt.compare(
@@ -182,7 +209,10 @@ export class AuthService {
       );
 
       if (!refreshTokenMatches) {
-        throw new UnauthorizedException('Access Denied');
+        throw new UnauthorizedException({
+          message: 'Access Denied',
+          message_key: AUTH_MESSAGE_KEYS.ACCESS_DENIED,
+        });
       }
 
       const payload: UserPayload = {
@@ -197,12 +227,19 @@ export class AuthService {
       return {
         statusCode: HttpStatus.OK,
         message: 'Token refreshed successfully',
+        message_key: AUTH_MESSAGE_KEYS.TOKEN_REFRESH_SUCCESS,
         data: {
           access_token: tokens.access_token,
         },
       };
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new BadRequestException({
+        message: 'Failed to refresh token',
+        message_key: AUTH_MESSAGE_KEYS.TOKEN_REFRESH_FAILURE,
+      });
     }
   }
 
@@ -214,12 +251,16 @@ export class AuthService {
       return {
         statusCode: HttpStatus.OK,
         message: 'Logged out successfully',
+        message_key: AUTH_MESSAGE_KEYS.LOGOUT_SUCCESS,
         data: {
           message: 'Logged out successfully',
         },
       };
     } catch {
-      throw new BadRequestException('Logout failed');
+      throw new BadRequestException({
+        message: 'Logout failed',
+        message_key: AUTH_MESSAGE_KEYS.FAILURE,
+      });
     }
   }
 
@@ -241,7 +282,10 @@ export class AuthService {
       const user = await this.usersService.findOne(userId);
 
       if (!user) {
-        throw new NotFoundException('User not found');
+        throw new NotFoundException({
+          message: 'User not found',
+          message_key: AUTH_MESSAGE_KEYS.USER_NOT_FOUND,
+        });
       }
 
       // Tạo đối tượng mới không bao gồm password và refreshToken
@@ -258,13 +302,17 @@ export class AuthService {
       return {
         statusCode: HttpStatus.OK,
         message: 'User details retrieved successfully',
+        message_key: AUTH_MESSAGE_KEYS.PROFILE_FETCHED,
         data: userInfo,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException('Failed to get user details');
+      throw new BadRequestException({
+        message: 'Failed to get user details',
+        message_key: AUTH_MESSAGE_KEYS.FAILURE,
+      });
     }
   }
 

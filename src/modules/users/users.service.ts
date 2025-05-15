@@ -15,6 +15,7 @@ import {
   UserQueryParams,
 } from './interfaces/user-query.interface';
 import * as bcrypt from 'bcrypt';
+import { USERS_MESSAGE_KEYS } from './constants/message-keys';
 
 @Injectable()
 export class UsersService {
@@ -28,7 +29,10 @@ export class UsersService {
       email: createUserDto.email,
     });
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException({
+        message: 'Email already exists',
+        message_key: USERS_MESSAGE_KEYS.EMAIL_ALREADY_EXISTS,
+      });
     }
 
     try {
@@ -51,7 +55,10 @@ export class UsersService {
         'password' | 'refreshToken'
       >;
     } catch {
-      throw new BadRequestException('Could not create user');
+      throw new BadRequestException({
+        message: 'Could not create user',
+        message_key: USERS_MESSAGE_KEYS.USER_CREATE_FAILED,
+      });
     }
   }
 
@@ -61,13 +68,21 @@ export class UsersService {
 
   async findOne(id: string): Promise<User> {
     const user = await this.userModel.findById(id).select('-password').exec();
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new NotFoundException({
+        message: 'User not found',
+        message_key: USERS_MESSAGE_KEYS.USER_NOT_FOUND,
+      });
     return user;
   }
 
   async findByEmail(email: string): Promise<User> {
     const user = await this.userModel.findOne({ email }).exec();
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new NotFoundException({
+        message: 'User not found',
+        message_key: USERS_MESSAGE_KEYS.USER_NOT_FOUND,
+      });
     return user;
   }
 
@@ -76,7 +91,10 @@ export class UsersService {
     return !!user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<Omit<User, 'password' | 'refreshToken'>> {
     // Kiểm tra nếu có email mới và email đã tồn tại
     if (updateUserDto.email) {
       const existingUser = await this.userModel.findOne({
@@ -85,7 +103,10 @@ export class UsersService {
       });
 
       if (existingUser) {
-        throw new ConflictException('Email already exists');
+        throw new ConflictException({
+          message: 'Email already exists',
+          message_key: USERS_MESSAGE_KEYS.EMAIL_ALREADY_EXISTS,
+        });
       }
     }
 
@@ -97,11 +118,16 @@ export class UsersService {
     try {
       const user = await this.userModel
         .findByIdAndUpdate(id, updateUserDto, { new: true })
-        .select('-password')
+        .select('-password -refreshToken')
         .exec();
 
-      if (!user) throw new NotFoundException('User not found');
-      return user;
+      if (!user)
+        throw new NotFoundException({
+          message: 'User not found',
+          message_key: USERS_MESSAGE_KEYS.USER_NOT_FOUND,
+        });
+
+      return user as Omit<User, 'password' | 'refreshToken'>;
     } catch (error) {
       if (
         error instanceof ConflictException ||
@@ -109,7 +135,10 @@ export class UsersService {
       ) {
         throw error;
       }
-      throw new BadRequestException('Could not update user');
+      throw new BadRequestException({
+        message: 'Could not update user',
+        message_key: USERS_MESSAGE_KEYS.USER_UPDATE_FAILED,
+      });
     }
   }
 
@@ -118,7 +147,11 @@ export class UsersService {
       .findByIdAndDelete(id)
       .select('-password')
       .exec();
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new NotFoundException({
+        message: 'User not found',
+        message_key: USERS_MESSAGE_KEYS.USER_NOT_FOUND,
+      });
     return user;
   }
 

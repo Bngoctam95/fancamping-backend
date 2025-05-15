@@ -16,6 +16,7 @@ import {
   ProductQueryParams,
   PaginatedProducts,
 } from './interfaces/product-query.interface';
+import { PRODUCTS_MESSAGE_KEYS } from './constants/message-keys';
 
 // Định nghĩa kiểu cho price filter
 interface PriceFilter {
@@ -38,7 +39,10 @@ export class ProductsService {
     });
 
     if (existingProduct) {
-      throw new ConflictException('Product slug already exists');
+      throw new ConflictException({
+        message: 'Product slug already exists',
+        message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_ALREADY_EXISTS,
+      });
     }
 
     // Kiểm tra danh mục có tồn tại
@@ -46,12 +50,22 @@ export class ProductsService {
       createProductDto.categoryId,
     );
     if (!category) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
     }
 
-    // Tạo sản phẩm mới
-    const newProduct = new this.productModel(createProductDto);
-    return newProduct.save();
+    try {
+      // Tạo sản phẩm mới
+      const newProduct = new this.productModel(createProductDto);
+      return newProduct.save();
+    } catch {
+      throw new BadRequestException({
+        message: 'Failed to create product',
+        message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_CREATE_FAILED,
+      });
+    }
   }
 
   async findAllProducts(
@@ -91,7 +105,7 @@ export class ProductsService {
 
     // Lọc theo giá
     if (minPrice !== undefined || maxPrice !== undefined) {
-      const priceFilter: { $gte?: number; $lte?: number } = {};
+      const priceFilter: PriceFilter = {};
       if (minPrice !== undefined) {
         priceFilter.$gte = minPrice;
       }
@@ -144,7 +158,10 @@ export class ProductsService {
       .exec();
 
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException({
+        message: 'Product not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_NOT_FOUND,
+      });
     }
 
     return product;
@@ -157,7 +174,10 @@ export class ProductsService {
       .exec();
 
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException({
+        message: 'Product not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_NOT_FOUND,
+      });
     }
 
     return product;
@@ -175,7 +195,10 @@ export class ProductsService {
       });
 
       if (existingProduct) {
-        throw new ConflictException('Product slug already exists');
+        throw new ConflictException({
+          message: 'Product slug already exists',
+          message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_ALREADY_EXISTS,
+        });
       }
     }
 
@@ -185,7 +208,10 @@ export class ProductsService {
         updateProductDto.categoryId,
       );
       if (!category) {
-        throw new NotFoundException('Category not found');
+        throw new NotFoundException({
+          message: 'Category not found',
+          message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+        });
       }
     }
 
@@ -196,7 +222,10 @@ export class ProductsService {
       .exec();
 
     if (!updatedProduct) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException({
+        message: 'Product not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_NOT_FOUND,
+      });
     }
 
     return updatedProduct;
@@ -206,7 +235,10 @@ export class ProductsService {
     const deletedProduct = await this.productModel.findByIdAndDelete(id).exec();
 
     if (!deletedProduct) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException({
+        message: 'Product not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_NOT_FOUND,
+      });
     }
 
     return deletedProduct;
@@ -222,12 +254,22 @@ export class ProductsService {
     });
 
     if (existingCategory) {
-      throw new ConflictException('Category slug already exists');
+      throw new ConflictException({
+        message: 'Category slug already exists',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_ALREADY_EXISTS,
+      });
     }
 
-    // Tạo danh mục mới
-    const newCategory = new this.categoryModel(createCategoryDto);
-    return newCategory.save();
+    try {
+      // Tạo danh mục mới
+      const newCategory = new this.categoryModel(createCategoryDto);
+      return newCategory.save();
+    } catch {
+      throw new BadRequestException({
+        message: 'Failed to create category',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_CREATE_FAILED,
+      });
+    }
   }
 
   async findAllCategories(isActive?: boolean | string): Promise<Category[]> {
@@ -256,7 +298,10 @@ export class ProductsService {
     const category = await this.categoryModel.findById(id).exec();
 
     if (!category) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
     }
 
     return category;
@@ -266,7 +311,10 @@ export class ProductsService {
     const category = await this.categoryModel.findOne({ slug }).exec();
 
     if (!category) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
     }
 
     return category;
@@ -284,7 +332,10 @@ export class ProductsService {
       });
 
       if (existingCategory) {
-        throw new ConflictException('Category slug already exists');
+        throw new ConflictException({
+          message: 'Category slug already exists',
+          message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_ALREADY_EXISTS,
+        });
       }
     }
 
@@ -294,7 +345,10 @@ export class ProductsService {
       .exec();
 
     if (!updatedCategory) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
     }
 
     return updatedCategory;
@@ -306,9 +360,10 @@ export class ProductsService {
       categoryId: id,
     });
     if (productCount > 0) {
-      throw new BadRequestException(
-        'Cannot delete category with existing products',
-      );
+      throw new BadRequestException({
+        message: 'Cannot delete category with existing products',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_DELETE_FAILED,
+      });
     }
 
     // Xóa danh mục
@@ -317,7 +372,10 @@ export class ProductsService {
       .exec();
 
     if (!deletedCategory) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
     }
 
     return deletedCategory;
