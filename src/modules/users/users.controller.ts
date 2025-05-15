@@ -28,6 +28,8 @@ import { Request as ExpressRequest } from 'express';
 import { Types } from 'mongoose';
 import { ApiResponse } from '../../interfaces/api-response.interface';
 import { User } from './schemas/user.schema';
+import { USERS_MESSAGE_KEYS } from './constants/message-keys';
+import { COMMON_MESSAGE_KEYS } from '../../constants/common-message-keys';
 
 // Interface cho Request với thông tin user
 interface RequestWithUser extends ExpressRequest {
@@ -53,22 +55,27 @@ export class UsersController {
 
     // Kiểm tra quyền tạo user dựa vào role
     if (createUserDto.role === UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException('Cannot create SUPER_ADMIN account');
+      throw new ForbiddenException({
+        message: 'Cannot create SUPER_ADMIN account',
+        message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+      });
     }
 
     if (createUserDto.role === UserRole.ADMIN) {
       if (currentUser.role !== UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException(
-          'Only SUPER_ADMIN can create ADMIN accounts',
-        );
+        throw new ForbiddenException({
+          message: 'Only SUPER_ADMIN can create ADMIN accounts',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
     if (createUserDto.role === UserRole.MOD) {
       if (![UserRole.SUPER_ADMIN, UserRole.ADMIN].includes(currentUser.role)) {
-        throw new ForbiddenException(
-          'Only SUPER_ADMIN and ADMIN can create MOD accounts',
-        );
+        throw new ForbiddenException({
+          message: 'Only SUPER_ADMIN and ADMIN can create MOD accounts',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
@@ -82,6 +89,7 @@ export class UsersController {
     return {
       statusCode: HttpStatus.CREATED,
       message: 'Tạo người dùng thành công',
+      message_key: USERS_MESSAGE_KEYS.USER_CREATED,
       data: userData,
     };
   }
@@ -121,6 +129,7 @@ export class UsersController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy danh sách người dùng thành công',
+      message_key: USERS_MESSAGE_KEYS.USER_FETCH_ALL_SUCCESS,
       data: users,
     };
   }
@@ -135,6 +144,7 @@ export class UsersController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy thông tin người dùng thành công',
+      message_key: USERS_MESSAGE_KEYS.USER_FETCH_SUCCESS,
       data: user,
     };
   }
@@ -149,25 +159,35 @@ export class UsersController {
     const userToView = await this.usersService.findOne(id);
 
     if (!userToView) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException({
+        message: 'User not found',
+        message_key: USERS_MESSAGE_KEYS.USER_NOT_FOUND,
+      });
     }
 
     // Kiểm tra quyền xem thông tin user
     if (currentUser.role === UserRole.MOD) {
       // MOD chỉ được xem thông tin USER thường
       if (userToView.role !== UserRole.USER) {
-        throw new ForbiddenException('MOD can only view regular USER accounts');
+        throw new ForbiddenException({
+          message: 'MOD can only view regular USER accounts',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     } else if (currentUser.role === UserRole.ADMIN) {
       // ADMIN không được xem thông tin SUPER_ADMIN
       if (userToView.role === UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException('ADMIN cannot view SUPER_ADMIN accounts');
+        throw new ForbiddenException({
+          message: 'ADMIN cannot view SUPER_ADMIN accounts',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy thông tin người dùng thành công',
+      message_key: USERS_MESSAGE_KEYS.USER_FETCH_SUCCESS,
       data: userToView,
     };
   }
@@ -177,12 +197,15 @@ export class UsersController {
     @Request() req: RequestWithUser,
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<ApiResponse<Omit<User, 'password'>>> {
+  ): Promise<ApiResponse<Omit<User, 'password' | 'refreshToken'>>> {
     const currentUser = req.user;
     const userToUpdate = await this.usersService.findOne(id);
 
     if (!userToUpdate) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException({
+        message: 'User not found',
+        message_key: USERS_MESSAGE_KEYS.USER_NOT_FOUND,
+      });
     }
 
     // Kiểm tra quyền cập nhật user
@@ -193,20 +216,27 @@ export class UsersController {
       )
     ) {
       if (currentUser._id.toString() !== id) {
-        throw new ForbiddenException('You can only update your own account');
+        throw new ForbiddenException({
+          message: 'You can only update your own account',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
     // 2. MOD chỉ có thể cập nhật thông tin USER thường, không thể cập nhật role
     if (currentUser.role === UserRole.MOD) {
       if (userToUpdate.role !== UserRole.USER) {
-        throw new ForbiddenException(
-          'MOD can only update regular USER accounts',
-        );
+        throw new ForbiddenException({
+          message: 'MOD can only update regular USER accounts',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
 
       if (updateUserDto.role) {
-        throw new ForbiddenException('MOD cannot update user roles');
+        throw new ForbiddenException({
+          message: 'MOD cannot update user roles',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
@@ -216,9 +246,10 @@ export class UsersController {
         [UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(userToUpdate.role) &&
         currentUser._id.toString() !== id
       ) {
-        throw new ForbiddenException(
-          'ADMIN cannot update other ADMIN or SUPER_ADMIN accounts',
-        );
+        throw new ForbiddenException({
+          message: 'ADMIN cannot update other ADMIN or SUPER_ADMIN accounts',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
 
       // ADMIN có thể đề xuất USER lên MOD, nhưng không thể tạo ADMIN hoặc SUPER_ADMIN
@@ -226,9 +257,10 @@ export class UsersController {
         updateUserDto.role === UserRole.ADMIN ||
         updateUserDto.role === UserRole.SUPER_ADMIN
       ) {
-        throw new ForbiddenException(
-          'ADMIN cannot promote users to ADMIN or SUPER_ADMIN',
-        );
+        throw new ForbiddenException({
+          message: 'ADMIN cannot promote users to ADMIN or SUPER_ADMIN',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
@@ -238,9 +270,10 @@ export class UsersController {
         updateUserDto.role === UserRole.SUPER_ADMIN &&
         currentUser._id.toString() !== id
       ) {
-        throw new ForbiddenException(
-          'Cannot promote other users to SUPER_ADMIN role',
-        );
+        throw new ForbiddenException({
+          message: 'Cannot promote other users to SUPER_ADMIN role',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
@@ -249,6 +282,7 @@ export class UsersController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Cập nhật thông tin người dùng thành công',
+      message_key: USERS_MESSAGE_KEYS.USER_UPDATED,
       data: updatedUser,
     };
   }
@@ -257,13 +291,16 @@ export class UsersController {
   async remove(
     @Request() req: RequestWithUser,
     @Param('id') id: string,
-  ): Promise<ApiResponse<Omit<User, 'password'>>> {
+  ): Promise<ApiResponse<null>> {
     const currentUser = req.user;
 
     // Nếu không phải là ADMIN/SUPER_ADMIN thì chỉ được xóa tài khoản của chính mình
     if (![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(currentUser.role)) {
       if (currentUser._id.toString() !== id) {
-        throw new ForbiddenException('You can only delete your own account');
+        throw new ForbiddenException({
+          message: 'You can only delete your own account',
+          message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+        });
       }
     }
 
@@ -272,7 +309,10 @@ export class UsersController {
 
     // Không ai được xóa SUPER_ADMIN
     if (userToDelete.role === UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException('Cannot delete SUPER_ADMIN account');
+      throw new ForbiddenException({
+        message: 'Cannot delete SUPER_ADMIN account',
+        message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+      });
     }
 
     // ADMIN không thể xóa ADMIN khác
@@ -280,15 +320,20 @@ export class UsersController {
       currentUser.role === UserRole.ADMIN &&
       userToDelete.role === UserRole.ADMIN
     ) {
-      throw new ForbiddenException('ADMIN cannot delete other ADMIN accounts');
+      throw new ForbiddenException({
+        message: 'ADMIN cannot delete other ADMIN accounts',
+        message_key: COMMON_MESSAGE_KEYS.FORBIDDEN,
+      });
     }
 
-    const deletedUser = await this.usersService.remove(id);
+    // Xóa user nhưng không trả về dữ liệu
+    await this.usersService.remove(id);
 
     return {
       statusCode: HttpStatus.OK,
       message: 'Xóa người dùng thành công',
-      data: deletedUser,
+      message_key: USERS_MESSAGE_KEYS.USER_DELETED,
+      data: null,
     };
   }
 }

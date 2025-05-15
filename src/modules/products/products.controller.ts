@@ -27,6 +27,7 @@ import {
   PaginatedProducts,
 } from './interfaces/product-query.interface';
 import { ApiResponse } from '../../interfaces/api-response.interface';
+import { PRODUCTS_MESSAGE_KEYS } from './constants/message-keys';
 
 @Controller('products')
 export class ProductsController {
@@ -45,6 +46,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.CREATED,
       message: 'Tạo danh mục thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_CREATED,
       data: category,
     };
   }
@@ -58,6 +60,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy danh sách danh mục thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_FETCH_ALL_SUCCESS,
       data: categories,
     };
   }
@@ -71,6 +74,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy thông tin danh mục thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_FETCH_SUCCESS,
       data: category,
     };
   }
@@ -84,6 +88,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy thông tin danh mục thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_FETCH_SUCCESS,
       data: category,
     };
   }
@@ -103,6 +108,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Cập nhật danh mục thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_UPDATED,
       data: category,
     };
   }
@@ -118,6 +124,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Xóa danh mục thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.CATEGORY_DELETED,
       data: category,
     };
   }
@@ -134,6 +141,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.CREATED,
       message: 'Tạo sản phẩm thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_CREATED,
       data: product,
     };
   }
@@ -171,6 +179,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy danh sách sản phẩm thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_FETCH_ALL_SUCCESS,
       data: products,
     };
   }
@@ -184,6 +193,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy thông tin sản phẩm thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_FETCH_SUCCESS,
       data: product,
     };
   }
@@ -197,6 +207,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Lấy thông tin sản phẩm thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_FETCH_SUCCESS,
       data: product,
     };
   }
@@ -216,6 +227,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Cập nhật sản phẩm thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_UPDATED,
       data: product,
     };
   }
@@ -229,6 +241,7 @@ export class ProductsController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Xóa sản phẩm thành công',
+      message_key: PRODUCTS_MESSAGE_KEYS.PRODUCT_DELETED,
       data: product,
     };
   }

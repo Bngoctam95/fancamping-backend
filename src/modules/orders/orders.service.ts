@@ -10,6 +10,7 @@ import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderStatus } from './enums/order-status.enum';
 import { PaymentStatus } from './enums/payment-status.enum';
+import { ORDERS_MESSAGE_KEYS } from './constants/message-keys';
 
 @Injectable()
 export class OrdersService {
@@ -24,11 +25,17 @@ export class OrdersService {
     const endDate = new Date(createOrderDto.endDate);
 
     if (startDate >= endDate) {
-      throw new BadRequestException('End date must be after start date');
+      throw new BadRequestException({
+        message: 'End date must be after start date',
+        message_key: ORDERS_MESSAGE_KEYS.ORDER_ITEMS_INVALID,
+      });
     }
 
     if (startDate < new Date()) {
-      throw new BadRequestException('Start date cannot be in the past');
+      throw new BadRequestException({
+        message: 'Start date cannot be in the past',
+        message_key: ORDERS_MESSAGE_KEYS.ORDER_ITEMS_INVALID,
+      });
     }
 
     // Calculate rental days
@@ -48,9 +55,10 @@ export class OrdersService {
     });
 
     if (products.length !== createOrderDto.items.length) {
-      throw new BadRequestException(
-        'One or more products not found or inactive',
-      );
+      throw new BadRequestException({
+        message: 'One or more products not found or inactive',
+        message_key: ORDERS_MESSAGE_KEYS.PRODUCT_NOT_AVAILABLE,
+      });
     }
 
     // Check inventory and calculate amount
@@ -62,13 +70,17 @@ export class OrdersService {
       );
 
       if (!product) {
-        throw new BadRequestException(`Product not found: ${item.productId}`);
+        throw new BadRequestException({
+          message: `Product not found: ${item.productId}`,
+          message_key: ORDERS_MESSAGE_KEYS.PRODUCT_NOT_AVAILABLE,
+        });
       }
 
       if (item.quantity > product.inventory.available) {
-        throw new BadRequestException(
-          `Not enough inventory for product: ${product.name}`,
-        );
+        throw new BadRequestException({
+          message: `Not enough inventory for product: ${product.name}`,
+          message_key: ORDERS_MESSAGE_KEYS.PRODUCT_NOT_AVAILABLE,
+        });
       }
 
       totalAmount += product.price * item.quantity * days;

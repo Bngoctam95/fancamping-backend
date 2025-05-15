@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { AdminService } from './modules/users/admin.service';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import { GlobalExceptionFilter } from './filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -26,6 +27,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true, // Throw error nếu có properties không được định nghĩa
     }),
   );
+
+  // Áp dụng Global Exception Filter
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Create default admin
   const adminService = app.get(AdminService);
