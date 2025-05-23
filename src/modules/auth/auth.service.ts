@@ -192,7 +192,7 @@ export class AuthService {
   async refreshTokens(
     userId: string,
     refreshToken: string,
-  ): Promise<ApiResponse<{ access_token: string }>> {
+  ): Promise<ApiResponse<TokenResponse>> {
     try {
       const user = await this.usersService.findOne(userId);
 
@@ -228,9 +228,7 @@ export class AuthService {
         statusCode: HttpStatus.OK,
         message: 'Token refreshed successfully',
         message_key: AUTH_MESSAGE_KEYS.TOKEN_REFRESH_SUCCESS,
-        data: {
-          access_token: tokens.access_token,
-        },
+        data: tokens,
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {

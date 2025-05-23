@@ -34,18 +34,20 @@ interface RequestWithUser extends Request {
   };
 }
 
-interface RequestWithCookies extends Request {
-  cookies: {
-    refresh_token?: string;
-  };
-}
-
 const REFRESH_TOKEN_COOKIE_CONFIG = {
   httpOnly: true,
   secure: process.env.NODE_ENV !== 'development',
   sameSite: 'strict' as const,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/auth/refresh',
+};
+
+const ACCESS_TOKEN_COOKIE_CONFIG = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV !== 'development',
+  sameSite: 'strict' as const,
+  maxAge: 24 * 60 * 60 * 1000, // 1 day
+  path: '/',
 };
 
 @Controller('auth')
@@ -87,15 +89,21 @@ export class AuthController {
 
     const result = await this.authService.login(req.user as unknown as User);
 
-    // Đặt refresh token vào cookie
+    // Set both tokens in cookies
     res.cookie(
       'refresh_token',
       (result.data as any).refresh_token,
       REFRESH_TOKEN_COOKIE_CONFIG,
     );
+    res.cookie(
+      'access_token',
+      (result.data as any).access_token,
+      ACCESS_TOKEN_COOKIE_CONFIG,
+    );
 
-    // Xóa refresh_token từ response data
+    // Remove tokens from response data
     delete (result.data as any).refresh_token;
+    delete (result.data as any).access_token;
 
     return result;
   }
@@ -108,8 +116,9 @@ export class AuthController {
   ): Promise<ApiResponse<any>> {
     const result = await this.authService.logout(req.user._id.toString());
 
-    // Xóa cookie refresh token
+    // Clear both token cookies
     res.clearCookie('refresh_token', { path: '/auth/refresh' });
+    res.clearCookie('access_token', { path: '/' });
 
     return result;
   }
@@ -117,11 +126,10 @@ export class AuthController {
   @UseGuards(RefreshTokenGuard)
   @Post('refresh')
   async refreshTokens(
-    @Request() req: RequestWithUser & RequestWithCookies,
+    @Request() req: RequestWithUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiResponse<any>> {
-    const refreshToken = req.cookies?.refresh_token || req.user.refreshToken;
-
+    const refreshToken = req.user.refreshToken;
     if (!refreshToken) {
       throw new BadRequestException('Refresh token is required');
     }
@@ -131,17 +139,21 @@ export class AuthController {
       refreshToken,
     );
 
-    // Đặt refresh token mới vào cookie nếu có
-    if ((result.data as any).refresh_token) {
-      res.cookie(
-        'refresh_token',
-        (result.data as any).refresh_token,
-        REFRESH_TOKEN_COOKIE_CONFIG,
-      );
+    // Set both new tokens in cookies
+    res.cookie(
+      'refresh_token',
+      result.data.refresh_token,
+      REFRESH_TOKEN_COOKIE_CONFIG,
+    );
+    res.cookie(
+      'access_token',
+      result.data.access_token,
+      ACCESS_TOKEN_COOKIE_CONFIG,
+    );
 
-      // Xóa refresh_token từ response data
-      delete (result.data as any).refresh_token;
-    }
+    // Remove tokens from response data
+    delete (result.data as any).refresh_token;
+    delete (result.data as any).access_token;
 
     return result;
   }
