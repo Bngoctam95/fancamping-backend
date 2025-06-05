@@ -128,7 +128,7 @@ export class AuthService {
 
   async register(
     userData: RegisterDto,
-  ): Promise<ApiResponse<Omit<LoginResponse, 'refresh_token'>>> {
+  ): Promise<ApiResponse<{ user: Omit<User, 'password' | 'refreshToken'> }>> {
     try {
       // Check if user already exists
       const emailExists = await this.usersService.checkEmailExists(
@@ -166,7 +166,6 @@ export class AuthService {
         message: 'User registered successfully',
         message_key: AUTH_MESSAGE_KEYS.REGISTER_SUCCESS,
         data: {
-          access_token: tokens.access_token,
           user: {
             _id: user._id,
             email: user.email,
@@ -192,7 +191,7 @@ export class AuthService {
   async refreshTokens(
     userId: string,
     refreshToken: string,
-  ): Promise<ApiResponse<{ access_token: string }>> {
+  ): Promise<ApiResponse<TokenResponse>> {
     try {
       const user = await this.usersService.findOne(userId);
 
@@ -228,9 +227,7 @@ export class AuthService {
         statusCode: HttpStatus.OK,
         message: 'Token refreshed successfully',
         message_key: AUTH_MESSAGE_KEYS.TOKEN_REFRESH_SUCCESS,
-        data: {
-          access_token: tokens.access_token,
-        },
+        data: tokens,
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
