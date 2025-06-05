@@ -28,7 +28,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     /* eslint-disable */
-  ) {}
+  ) { }
 
   async validateUser(email: string, password: string): Promise<User | null> {
     if (!password) {
@@ -54,6 +54,7 @@ export class AuthService {
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+
     if (!isPasswordValid) {
       throw new UnauthorizedException({
         message: 'Invalid password',
@@ -141,13 +142,9 @@ export class AuthService {
         });
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-      // Create new user
+      // Create new user with plain password, let UsersService handle the hashing
       const user = await this.usersService.create({
         ...userData,
-        password: hashedPassword,
         role: UserRole.USER,
       });
 
