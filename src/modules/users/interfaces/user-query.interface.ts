@@ -5,8 +5,11 @@ export interface UserQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  name?: string;
+  email?: string;
   role?: UserRole;
   isActive?: boolean;
+  sort?: string;
 }
 
 export interface PaginatedUsers {

@@ -29,4 +29,11 @@ export const PRODUCTS_MESSAGE_KEYS = {
   REVIEW_CREATED: 'products.review.created',
   REVIEW_NOT_FOUND: 'products.review.not_found',
   REVIEW_DELETED: 'products.review.deleted',
-};
+
+  // Upload messages
+  UPLOAD_SUCCESS: 'UPLOAD_SUCCESS',
+  UPLOAD_FAILED: 'UPLOAD_FAILED',
+  FILE_NOT_FOUND: 'FILE_NOT_FOUND',
+  INVALID_FILE_TYPE: 'INVALID_FILE_TYPE',
+  FILE_TOO_LARGE: 'FILE_TOO_LARGE',
+} as const;

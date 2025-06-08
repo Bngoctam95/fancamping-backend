@@ -19,7 +19,7 @@ import { USERS_MESSAGE_KEYS } from './constants/message-keys';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
 
   async create(
     createUserDto: CreateUserDto,
@@ -142,24 +142,22 @@ export class UsersService {
     }
   }
 
-  async remove(id: string): Promise<User> {
-    const user = await this.userModel
-      .findByIdAndDelete(id)
-      .select('-password')
-      .exec();
-    if (!user)
+  async remove(id: string): Promise<{ acknowledged: boolean; deletedCount: number }> {
+    const result = await this.userModel.deleteOne({ _id: id }).exec();
+    if (result.deletedCount === 0) {
       throw new NotFoundException({
         message: 'User not found',
         message_key: USERS_MESSAGE_KEYS.USER_NOT_FOUND,
       });
-    return user;
+    }
+    return result;
   }
 
   async findAllWithFilters(
     currentUserRole: UserRole,
     queryParams: UserQueryParams,
   ): Promise<PaginatedUsers> {
-    const { page = 1, limit = 10, search, role, isActive } = queryParams;
+    const { page = 1, limit = 10, search, name, email, role, isActive, sort } = queryParams;
     const skip = (page - 1) * limit;
 
     // Xây dựng các điều kiện filter dựa theo role người dùng
@@ -203,13 +201,32 @@ export class UsersService {
       query.isActive = isActive;
     }
 
-    // Áp dụng tìm kiếm nếu có
+    // Áp dụng tìm kiếm theo name hoặc email cụ thể nếu có
+    if (name) {
+      query.name = { $regex: name, $options: 'i' };
+    }
+    if (email) {
+      query.email = { $regex: email, $options: 'i' };
+    }
+
+    // Áp dụng tìm kiếm chung nếu có
     if (search) {
-      // Tìm kiếm theo name hoặc email
       query.$or = [
-        { name: { $regex: search, $options: 'i' } }, // Case-insensitive search
+        { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
       ];
+    }
+
+    // Xác định cách sắp xếp
+    let sortOptions: any = { createdAt: -1 }; // Mặc định sắp xếp theo createdAt giảm dần
+    if (sort) {
+      const sortField = sort.startsWith('-') ? sort.substring(1) : sort;
+      const sortOrder = sort.startsWith('-') ? -1 : 1;
+
+      // Chỉ cho phép sắp xếp theo name và createdAt
+      if (['name', 'createdAt'].includes(sortField)) {
+        sortOptions = { [sortField]: sortOrder };
+      }
     }
 
     // Thực hiện truy vấn đếm tổng số
@@ -219,8 +236,8 @@ export class UsersService {
     // Thực hiện truy vấn lấy dữ liệu với phân trang và sắp xếp
     const users = await this.userModel
       .find(query)
-      .select('-password -refreshToken') // Không lấy mật khẩu và refreshToken
-      .sort({ createdAt: -1 }) // Sắp xếp mới nhất trước
+      .select('-password -refreshToken')
+      .sort(sortOptions)
       .skip(skip)
       .limit(limit)
       .exec();
