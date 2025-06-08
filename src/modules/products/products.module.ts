@@ -4,6 +4,7 @@ import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { Product, ProductSchema } from './schemas/product.schema';
 import { Category, CategorySchema } from './schemas/category.schema';
+import { UploadService } from './services/upload.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { Category, CategorySchema } from './schemas/category.schema';
     ]),
   ],
   controllers: [ProductsController],
-  providers: [ProductsService],
+  providers: [ProductsService, UploadService],
   exports: [ProductsService],
 })
-export class ProductsModule {}
+export class ProductsModule { }
