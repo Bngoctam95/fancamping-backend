@@ -43,7 +43,7 @@ interface RequestWithUser extends ExpressRequest {
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post()
   @Roles(UserRole.MOD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -101,8 +101,11 @@ export class UsersController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
     @Query('search') search?: string,
+    @Query('name') name?: string,
+    @Query('email') email?: string,
     @Query('role') role?: UserRole,
     @Query('isActive') isActive?: string,
+    @Query('sort') sort?: string,
   ): Promise<ApiResponse<PaginatedUsers>> {
     const currentUser = req.user;
 
@@ -116,8 +119,11 @@ export class UsersController {
       page: +page, // Convert to number
       limit: +limit, // Convert to number
       search,
+      name,
+      email,
       role,
       isActive: isActiveValue,
+      sort,
     };
 
     // Lấy danh sách user với filter theo role
@@ -291,7 +297,7 @@ export class UsersController {
   async remove(
     @Request() req: RequestWithUser,
     @Param('id') id: string,
-  ): Promise<ApiResponse<null>> {
+  ): Promise<ApiResponse<{ acknowledged: boolean; deletedCount: number } | null>> {
     const currentUser = req.user;
 
     // Nếu không phải là ADMIN/SUPER_ADMIN thì chỉ được xóa tài khoản của chính mình
@@ -326,14 +332,14 @@ export class UsersController {
       });
     }
 
-    // Xóa user nhưng không trả về dữ liệu
-    await this.usersService.remove(id);
+    // Xóa user và trả về kết quả xóa
+    const result = await this.usersService.remove(id);
 
     return {
       statusCode: HttpStatus.OK,
       message: 'Xóa người dùng thành công',
       message_key: USERS_MESSAGE_KEYS.USER_DELETED,
-      data: null,
+      data: result,
     };
   }
 }
