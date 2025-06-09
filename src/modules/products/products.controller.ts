@@ -34,14 +34,17 @@ import { ApiResponse } from '../../interfaces/api-response.interface';
 import { PRODUCTS_MESSAGE_KEYS } from './constants/message-keys';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './services/upload.service';
-import { thumbnailMulterConfig, sliderMulterConfig } from './config/upload.config';
+import {
+  thumbnailMulterConfig,
+  sliderMulterConfig,
+} from './config/upload.config';
 
 @Controller('products')
 export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
     private readonly uploadService: UploadService,
-  ) { }
+  ) {}
 
   // Category Routes
   @Post('categories')
@@ -261,7 +264,7 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @UseInterceptors(FileInterceptor('file', thumbnailMulterConfig))
   async uploadThumbnail(
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<ApiResponse<string>> {
     console.log('Received file:', file);
 
@@ -288,13 +291,14 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @UseInterceptors(FilesInterceptor('files', 10, sliderMulterConfig))
   async uploadSliderImages(
-    @UploadedFiles() files: Express.Multer.File[]
+    @UploadedFiles() files: Express.Multer.File[],
   ): Promise<ApiResponse<string[]>> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files uploaded');
     }
 
-    const filePaths = await this.uploadService.processAndSaveSliderImages(files);
+    const filePaths =
+      await this.uploadService.processAndSaveSliderImages(files);
 
     return {
       statusCode: HttpStatus.OK,
