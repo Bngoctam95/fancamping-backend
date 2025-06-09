@@ -17,4 +17,4 @@ import { UploadService } from './services/upload.service';
   providers: [ProductsService, UploadService],
   exports: [ProductsService],
 })
-export class ProductsModule { }
+export class ProductsModule {}

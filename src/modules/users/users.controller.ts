@@ -43,7 +43,7 @@ interface RequestWithUser extends ExpressRequest {
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   @Roles(UserRole.MOD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -297,7 +297,9 @@ export class UsersController {
   async remove(
     @Request() req: RequestWithUser,
     @Param('id') id: string,
-  ): Promise<ApiResponse<{ acknowledged: boolean; deletedCount: number } | null>> {
+  ): Promise<
+    ApiResponse<{ acknowledged: boolean; deletedCount: number } | null>
+  > {
     const currentUser = req.user;
 
     // Nếu không phải là ADMIN/SUPER_ADMIN thì chỉ được xóa tài khoản của chính mình

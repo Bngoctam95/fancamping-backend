@@ -19,7 +19,7 @@ import { USERS_MESSAGE_KEYS } from './constants/message-keys';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async create(
     createUserDto: CreateUserDto,
@@ -142,7 +142,9 @@ export class UsersService {
     }
   }
 
-  async remove(id: string): Promise<{ acknowledged: boolean; deletedCount: number }> {
+  async remove(
+    id: string,
+  ): Promise<{ acknowledged: boolean; deletedCount: number }> {
     const result = await this.userModel.deleteOne({ _id: id }).exec();
     if (result.deletedCount === 0) {
       throw new NotFoundException({
@@ -157,7 +159,16 @@ export class UsersService {
     currentUserRole: UserRole,
     queryParams: UserQueryParams,
   ): Promise<PaginatedUsers> {
-    const { page = 1, limit = 10, search, name, email, role, isActive, sort } = queryParams;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      name,
+      email,
+      role,
+      isActive,
+      sort,
+    } = queryParams;
     const skip = (page - 1) * limit;
 
     // Xây dựng các điều kiện filter dựa theo role người dùng
