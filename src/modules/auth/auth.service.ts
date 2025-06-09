@@ -28,7 +28,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     /* eslint-disable */
-  ) { }
+  ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
     if (!password) {
