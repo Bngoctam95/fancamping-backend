@@ -12,23 +12,6 @@ import {
 } from 'class-validator';
 import { ProductStatus } from '../schemas/product.schema';
 
-class PricingDto {
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  regular?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  weekend?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  deposit?: number;
-}
-
 class InventoryDto {
   @IsNumber()
   @IsOptional()
@@ -67,10 +50,10 @@ export class UpdateProductDto {
   @IsOptional()
   slider?: string[];
 
+  @IsNumber()
   @IsOptional()
-  @ValidateNested()
-  @Type(() => PricingDto)
-  pricing?: PricingDto;
+  @Min(0)
+  price?: number;
 
   @IsOptional()
   @ValidateNested()
