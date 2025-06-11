@@ -20,11 +20,11 @@ export const UPLOAD_CONFIG = {
     maxSize: 2 * 1024 * 1024, // 2MB
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'] as string[],
     dimensions: {
-      width: 300,
-      height: 300,
+      width: 960,
+      height: 540,
       fit: 'cover' as const,
     },
-    quality: 80,
+    quality: 85,
     path: 'products/thumbnails',
   },
   slider: {
