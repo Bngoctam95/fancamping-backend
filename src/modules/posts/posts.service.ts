@@ -1,0 +1,240 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { Post, PostDocument } from './schemas/post.schema';
+import { Category, CategoryDocument } from './schemas/category.schema';
+import { Comment, CommentDocument } from './schemas/comment.schema';
+import { Like, LikeDocument } from './schemas/like.schema';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
+
+@Injectable()
+export class PostsService {
+  constructor(
+    @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+    @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
+    @InjectModel(Like.name) private likeModel: Model<LikeDocument>,
+  ) {}
+
+  // Post methods
+  async create(
+    createPostDto: CreatePostDto,
+    authorId: Types.ObjectId,
+  ): Promise<Post> {
+    const category = await this.categoryModel.findById(
+      createPostDto.categoryId,
+    );
+    if (!category) {
+      throw new BadRequestException('Category not found');
+    }
+
+    const post = new this.postModel({
+      ...createPostDto,
+      authorId,
+      published: false,
+      status: 'draft',
+    });
+
+    return post.save();
+  }
+
+  async findAll(query: any = {}): Promise<Post[]> {
+    const filter: any = {};
+
+    // Filter by category
+    if (query.categoryId) {
+      filter.categoryId = new Types.ObjectId(query.categoryId);
+    }
+
+    // Filter by author
+    if (query.authorId) {
+      filter.authorId = new Types.ObjectId(query.authorId);
+    }
+
+    // Filter by type
+    if (query.type) {
+      filter.type = query.type;
+    }
+
+    // Filter by status
+    if (query.status) {
+      filter.status = query.status;
+    }
+
+    // Search by title or content
+    if (query.search) {
+      filter.$or = [
+        { title: { $regex: query.search, $options: 'i' } },
+        { content: { $regex: query.search, $options: 'i' } },
+      ];
+    }
+
+    return this.postModel
+      .find(filter)
+      .populate('authorId', 'name email')
+      .populate('categoryId', 'name')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async findOne(id: string): Promise<Post> {
+    const post = await this.postModel
+      .findById(id)
+      .populate('authorId', 'name email')
+      .populate('categoryId', 'name')
+      .exec();
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return post;
+  }
+
+  async update(id: string, updatePostDto: UpdatePostDto): Promise<Post> {
+    const existingPost = await this.postModel.findById(id);
+    if (!existingPost) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (updatePostDto.categoryId) {
+      const category = await this.categoryModel.findById(
+        updatePostDto.categoryId,
+      );
+      if (!category) {
+        throw new BadRequestException('Category not found');
+      }
+    }
+
+    const updatedPost = await this.postModel
+      .findByIdAndUpdate(id, updatePostDto, { new: true, runValidators: true })
+      .populate('authorId', 'name email')
+      .populate('categoryId', 'name')
+      .exec();
+
+    if (!updatedPost) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return updatedPost;
+  }
+
+  async remove(id: string): Promise<void> {
+    const result = await this.postModel.deleteOne({ _id: id });
+    if (result.deletedCount === 0) {
+      throw new NotFoundException('Post not found');
+    }
+  }
+
+  // Category methods
+  async createCategory(
+    createCategoryDto: CreateCategoryDto,
+  ): Promise<Category> {
+    const category = new this.categoryModel(createCategoryDto);
+    return category.save();
+  }
+
+  async findAllCategories(): Promise<Category[]> {
+    return this.categoryModel.find().exec();
+  }
+
+  // Comment methods
+  async createComment(
+    createCommentDto: CreateCommentDto,
+    authorId: Types.ObjectId,
+  ): Promise<Comment> {
+    const post = await this.postModel.findById(createCommentDto.postId);
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (createCommentDto.parentId) {
+      const parentComment = await this.commentModel.findById(
+        createCommentDto.parentId,
+      );
+      if (!parentComment) {
+        throw new NotFoundException('Parent comment not found');
+      }
+    }
+
+    const comment = new this.commentModel({
+      ...createCommentDto,
+      authorId,
+    });
+
+    const savedComment = await comment.save();
+
+    // Update post comment count
+    await this.postModel.findByIdAndUpdate(createCommentDto.postId, {
+      $inc: { commentCount: 1 },
+    });
+
+    return savedComment;
+  }
+
+  async getPostComments(postId: string): Promise<Comment[]> {
+    return this.commentModel
+      .find({ postId, status: 'active' })
+      .populate('authorId', 'name email')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  // Like methods
+  async toggleLike(
+    userId: Types.ObjectId,
+    targetId: string,
+    targetType: 'post' | 'comment',
+  ): Promise<void> {
+    const existingLike = await this.likeModel.findOne({
+      userId,
+      targetId: new Types.ObjectId(targetId),
+      targetType,
+    });
+
+    if (existingLike) {
+      await this.likeModel.deleteOne({ _id: existingLike._id });
+      if (targetType === 'post') {
+        await this.postModel.findByIdAndUpdate(targetId, {
+          $inc: { likeCount: -1 },
+        });
+      } else {
+        await this.commentModel.findByIdAndUpdate(targetId, {
+          $inc: { likeCount: -1 },
+        });
+      }
+    } else {
+      await this.likeModel.create({
+        userId,
+        targetId: new Types.ObjectId(targetId),
+        targetType,
+      });
+      if (targetType === 'post') {
+        await this.postModel.findByIdAndUpdate(targetId, {
+          $inc: { likeCount: 1 },
+        });
+      } else {
+        await this.commentModel.findByIdAndUpdate(targetId, {
+          $inc: { likeCount: 1 },
+        });
+      }
+    }
+  }
+
+  async getLikes(
+    targetId: string,
+    targetType: 'post' | 'comment',
+  ): Promise<number> {
+    return this.likeModel.countDocuments({
+      targetId: new Types.ObjectId(targetId),
+      targetType,
+    });
+  }
+}
