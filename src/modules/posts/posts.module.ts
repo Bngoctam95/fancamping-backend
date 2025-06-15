@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
+import { UploadService } from './services/upload.service';
 import { Post, PostSchema } from './schemas/post.schema';
 import { Category, CategorySchema } from './schemas/category.schema';
 import { Comment, CommentSchema } from './schemas/comment.schema';
@@ -17,7 +18,7 @@ import { Like, LikeSchema } from './schemas/like.schema';
     ]),
   ],
   controllers: [PostsController],
-  providers: [PostsService],
+  providers: [PostsService, UploadService],
   exports: [PostsService],
 })
-export class PostsModule {}
+export class PostsModule { }

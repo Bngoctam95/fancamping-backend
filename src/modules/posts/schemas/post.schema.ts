@@ -47,8 +47,8 @@ export class Post {
   @Prop({ required: true })
   slug: string;
 
-  @Prop({ default: 'draft', enum: ['draft', 'published', 'archived'] })
-  status: 'draft' | 'published' | 'archived';
+  @Prop({ default: 'draft', enum: ['draft', 'pending', 'published', 'archived'] })
+  status: 'draft' | 'pending' | 'published' | 'archived';
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

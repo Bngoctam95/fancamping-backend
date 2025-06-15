@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -13,6 +14,8 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { POSTS_MESSAGE_KEYS } from './constants/message-keys';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class PostsService {
@@ -21,7 +24,7 @@ export class PostsService {
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
     @InjectModel(Like.name) private likeModel: Model<LikeDocument>,
-  ) {}
+  ) { }
 
   // Post methods
   async create(
@@ -137,12 +140,132 @@ export class PostsService {
   async createCategory(
     createCategoryDto: CreateCategoryDto,
   ): Promise<Category> {
-    const category = new this.categoryModel(createCategoryDto);
-    return category.save();
+    // Kiểm tra slug đã tồn tại
+    const existingCategory = await this.categoryModel.findOne({
+      slug: createCategoryDto.slug,
+    });
+
+    if (existingCategory) {
+      throw new ConflictException({
+        message: 'Category slug already exists',
+        message_key: POSTS_MESSAGE_KEYS.CATEGORY_ALREADY_EXISTS,
+      });
+    }
+
+    try {
+      // Tạo danh mục mới
+      const newCategory = new this.categoryModel(createCategoryDto);
+      return newCategory.save();
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'Failed to create category',
+        message_key: POSTS_MESSAGE_KEYS.CATEGORY_CREATE_FAILED,
+      });
+    }
   }
 
-  async findAllCategories(): Promise<Category[]> {
-    return this.categoryModel.find().exec();
+  async findAllCategories(isActive?: boolean | string, type?: string): Promise<Category[]> {
+    const query: any = {};
+
+    // Filter by isActive
+    if (isActive !== undefined) {
+      query.isActive = isActive === true || isActive === 'true';
+    }
+
+    // Filter by type
+    if (type) {
+      query.type = type;
+    }
+
+    return this.categoryModel
+      .find(query)
+      .sort({ order: 1, name: 1 })
+      .exec();
+  }
+
+  async findCategoryById(id: string): Promise<Category> {
+    const category = await this.categoryModel.findById(id).exec();
+
+    if (!category) {
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: POSTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
+    }
+
+    return category;
+  }
+
+  async findCategoryBySlug(slug: string): Promise<Category> {
+    const category = await this.categoryModel.findOne({ slug }).exec();
+
+    if (!category) {
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: POSTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
+    }
+
+    return category;
+  }
+
+  async updateCategory(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
+    // Kiểm tra slug đã tồn tại (nếu cập nhật slug)
+    if (updateCategoryDto.slug) {
+      const existingCategory = await this.categoryModel.findOne({
+        slug: updateCategoryDto.slug,
+        _id: { $ne: id },
+      });
+
+      if (existingCategory) {
+        throw new ConflictException({
+          message: 'Category slug already exists',
+          message_key: POSTS_MESSAGE_KEYS.CATEGORY_ALREADY_EXISTS,
+        });
+      }
+    }
+
+    // Cập nhật danh mục
+    const updatedCategory = await this.categoryModel
+      .findByIdAndUpdate(id, updateCategoryDto, { new: true })
+      .exec();
+
+    if (!updatedCategory) {
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: POSTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
+    }
+
+    return updatedCategory;
+  }
+
+  async removeCategory(id: string): Promise<Category> {
+    // Kiểm tra xem danh mục có bài viết nào không
+    const postCount = await this.postModel.countDocuments({
+      categoryId: id,
+    });
+    if (postCount > 0) {
+      throw new BadRequestException({
+        message: 'Cannot delete category with existing posts',
+        message_key: POSTS_MESSAGE_KEYS.CATEGORY_DELETE_FAILED,
+      });
+    }
+
+    // Xóa danh mục
+    const deletedCategory = await this.categoryModel.findByIdAndDelete(id).exec();
+
+    if (!deletedCategory) {
+      throw new NotFoundException({
+        message: 'Category not found',
+        message_key: POSTS_MESSAGE_KEYS.CATEGORY_NOT_FOUND,
+      });
+    }
+
+    return deletedCategory;
   }
 
   // Comment methods

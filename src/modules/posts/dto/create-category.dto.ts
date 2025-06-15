@@ -1,5 +1,4 @@
-import { IsString, IsOptional, IsMongoId, IsNumber } from 'class-validator';
-import { Types } from 'mongoose';
+import { IsString, IsOptional, IsNumber, Min, IsBoolean } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -12,11 +11,19 @@ export class CreateCategoryDto {
   @IsOptional()
   description?: string;
 
-  @IsMongoId()
+  @IsString()
+  type: string;
+
+  @IsString()
   @IsOptional()
-  parentId?: Types.ObjectId;
+  image?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 
   @IsNumber()
   @IsOptional()
+  @Min(0)
   order?: number;
 }

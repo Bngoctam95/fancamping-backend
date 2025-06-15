@@ -16,6 +16,9 @@ export class Category {
   @Prop()
   description: string;
 
+  @Prop({ required: true })
+  type: string;
+
   @Prop()
   image: string;
 
@@ -28,7 +31,8 @@ export class Category {
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
 
-// Tạo index
-CategorySchema.index({ name: 'text', slug: 'text' });
+// Indexes
+CategorySchema.index({ slug: 1 }, { unique: true });
+CategorySchema.index({ type: 1 });
 CategorySchema.index({ isActive: 1 });
 CategorySchema.index({ order: 1 });
