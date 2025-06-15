@@ -44,7 +44,7 @@ export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
     private readonly uploadService: UploadService,
-  ) {}
+  ) { }
 
   // Category Routes
   @Post('categories')
@@ -66,9 +66,10 @@ export class ProductsController {
 
   @Get('categories')
   async findAllCategories(
-    @Query('isActive') isActive?: boolean,
+    @Query('isActive') isActive?: boolean | string,
+    @Query('type') type?: string,
   ): Promise<ApiResponse<Category[]>> {
-    const categories = await this.productsService.findAllCategories(isActive);
+    const categories = await this.productsService.findAllCategories(isActive, type);
 
     return {
       statusCode: HttpStatus.OK,

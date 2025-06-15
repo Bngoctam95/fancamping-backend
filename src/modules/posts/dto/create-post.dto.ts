@@ -37,4 +37,8 @@ export class CreatePostDto {
   @IsString()
   @IsOptional()
   slug?: string;
+
+  @IsEnum(['draft', 'pending', 'published', 'archived'])
+  @IsOptional()
+  status?: 'draft' | 'pending' | 'published' | 'archived';
 }

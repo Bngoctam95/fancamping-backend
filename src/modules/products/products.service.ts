@@ -29,7 +29,7 @@ export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
-  ) {}
+  ) { }
 
   // Product Methods
   async createProduct(createProductDto: CreateProductDto): Promise<Product> {
@@ -272,7 +272,7 @@ export class ProductsService {
     }
   }
 
-  async findAllCategories(isActive?: boolean | string): Promise<Category[]> {
+  async findAllCategories(isActive?: boolean | string, type?: string): Promise<Category[]> {
     try {
       const query: FilterQuery<CategoryDocument> = {};
 
@@ -280,6 +280,11 @@ export class ProductsService {
       if (isActive !== undefined) {
         // Convert string 'true'/'false' to boolean
         query.isActive = isActive === true || isActive === 'true';
+      }
+
+      // Filter by type if provided
+      if (type) {
+        query.type = type;
       }
 
       const categories = await this.categoryModel
