@@ -219,7 +219,7 @@ export class PostsController {
   async remove(
     @Param('id') id: string,
     @Request() req: RequestWithUser,
-  ): Promise<ApiResponse<undefined>> {
+  ): Promise<ApiResponse<PostSchema>> {
     // Kiểm tra quyền xóa bài viết
     const post = await this.postsService.findOne(id);
     if (!post) {
@@ -242,12 +242,12 @@ export class PostsController {
       });
     }
 
-    await this.postsService.remove(id);
+    const deletedPost = await this.postsService.remove(id);
     return {
       statusCode: 200,
       message: 'Post deleted successfully',
       message_key: POSTS_MESSAGE_KEYS.POST_DELETED,
-      data: undefined,
+      data: deletedPost,
     };
   }
 
