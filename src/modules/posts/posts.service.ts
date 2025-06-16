@@ -129,11 +129,14 @@ export class PostsService {
     return updatedPost;
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.postModel.deleteOne({ _id: id });
-    if (result.deletedCount === 0) {
+  async remove(id: string): Promise<Post> {
+    const post = await this.postModel.findById(id);
+    if (!post) {
       throw new NotFoundException('Post not found');
     }
+    
+    await this.postModel.deleteOne({ _id: id });
+    return post;
   }
 
   // Category methods
