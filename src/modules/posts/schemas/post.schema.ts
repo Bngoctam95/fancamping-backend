@@ -49,9 +49,12 @@ export class Post {
 
   @Prop({
     default: 'draft',
-    enum: ['draft', 'pending', 'published', 'archived'],
+    enum: ['draft', 'pending', 'published', 'archived', 'rejected'],
   })
-  status: 'draft' | 'pending' | 'published' | 'archived';
+  status: 'draft' | 'pending' | 'published' | 'archived' | 'rejected';
+
+  @Prop()
+  rejectionReason?: string;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
