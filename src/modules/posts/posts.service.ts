@@ -24,7 +24,7 @@ export class PostsService {
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
     @InjectModel(Like.name) private likeModel: Model<LikeDocument>,
-  ) {}
+  ) { }
 
   // Post methods
   async create(
@@ -127,8 +127,13 @@ export class PostsService {
     }
 
     // Validate status if provided
-    if (updatePostDto.status && !['draft', 'pending', 'published', 'archived'].includes(updatePostDto.status)) {
-      throw new BadRequestException('Invalid status. Only draft, pending, published, or archived is allowed');
+    if (updatePostDto.status && !['draft', 'pending', 'published', 'archived', 'rejected'].includes(updatePostDto.status)) {
+      throw new BadRequestException('Invalid status. Only draft, pending, published, archived, or rejected is allowed');
+    }
+
+    // If status is being changed to rejected, ensure rejection reason is provided
+    if (updatePostDto.status === 'rejected' && !updatePostDto.rejectionReason) {
+      throw new BadRequestException('Rejection reason is required when rejecting a post');
     }
 
     const updatedPost = await this.postModel

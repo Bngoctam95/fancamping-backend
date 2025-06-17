@@ -6,6 +6,8 @@ import {
   IsEnum,
   IsMongoId,
   IsBoolean,
+  IsNotEmpty,
+  ValidateIf,
 } from 'class-validator';
 import { Types } from 'mongoose';
 
@@ -47,7 +49,12 @@ export class UpdatePostDto {
   @IsOptional()
   slug?: string;
 
-  @IsEnum(['draft', 'pending', 'published', 'archived'])
+  @IsEnum(['draft', 'pending', 'published', 'archived', 'rejected'])
   @IsOptional()
-  status?: 'draft' | 'pending' | 'published' | 'archived';
+  status?: 'draft' | 'pending' | 'published' | 'archived' | 'rejected';
+
+  @ValidateIf(o => o.status === 'rejected')
+  @IsNotEmpty({ message: 'Rejection reason is required when rejecting a post' })
+  @IsString()
+  rejectionReason?: string;
 }
