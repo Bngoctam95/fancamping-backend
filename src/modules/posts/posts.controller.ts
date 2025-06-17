@@ -33,14 +33,17 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { POSTS_MESSAGE_KEYS } from './constants/message-keys';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './services/upload.service';
-import { thumbnailMulterConfig, contentImageMulterConfig } from './config/upload.config';
+import {
+  thumbnailMulterConfig,
+  contentImageMulterConfig,
+} from './config/upload.config';
 
 @Controller('posts')
 export class PostsController {
   constructor(
     private readonly postsService: PostsService,
     private readonly uploadService: UploadService,
-  ) { }
+  ) {}
 
   // Category endpoints
   @Post('categories')
@@ -63,7 +66,10 @@ export class PostsController {
     @Query('isActive') isActive?: boolean | string,
     @Query('type') type?: string,
   ): Promise<ApiResponse<Category[]>> {
-    const categories = await this.postsService.findAllCategories(isActive, type);
+    const categories = await this.postsService.findAllCategories(
+      isActive,
+      type,
+    );
     return {
       statusCode: 200,
       message: 'Categories retrieved successfully',
@@ -73,7 +79,9 @@ export class PostsController {
   }
 
   @Get('categories/slug/:slug')
-  async findCategoryBySlug(@Param('slug') slug: string): Promise<ApiResponse<Category>> {
+  async findCategoryBySlug(
+    @Param('slug') slug: string,
+  ): Promise<ApiResponse<Category>> {
     const category = await this.postsService.findCategoryBySlug(slug);
     return {
       statusCode: 200,
@@ -84,7 +92,9 @@ export class PostsController {
   }
 
   @Get('categories/:id')
-  async findCategoryById(@Param('id') id: string): Promise<ApiResponse<Category>> {
+  async findCategoryById(
+    @Param('id') id: string,
+  ): Promise<ApiResponse<Category>> {
     const category = await this.postsService.findCategoryById(id);
     return {
       statusCode: 200,
@@ -101,7 +111,10 @@ export class PostsController {
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ): Promise<ApiResponse<Category>> {
-    const category = await this.postsService.updateCategory(id, updateCategoryDto);
+    const category = await this.postsService.updateCategory(
+      id,
+      updateCategoryDto,
+    );
     return {
       statusCode: 200,
       message: 'Category updated successfully',
@@ -113,7 +126,9 @@ export class PostsController {
   @Delete('categories/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async removeCategory(@Param('id') id: string): Promise<ApiResponse<Category>> {
+  async removeCategory(
+    @Param('id') id: string,
+  ): Promise<ApiResponse<Category>> {
     const deletedCategory = await this.postsService.removeCategory(id);
     return {
       statusCode: 200,
@@ -156,7 +171,10 @@ export class PostsController {
     @Request() req: RequestWithUser,
     @Query() query: any,
   ): Promise<ApiResponse<PostSchema[]>> {
-    const posts = await this.postsService.findAll({ ...query, authorId: req.user._id });
+    const posts = await this.postsService.findAll({
+      ...query,
+      authorId: req.user._id,
+    });
     return {
       statusCode: 200,
       message: 'My posts retrieved successfully',
@@ -193,12 +211,10 @@ export class PostsController {
     }
 
     // Kiểm tra quyền sửa bài viết
-    if (
-      post.authorId.toString() !== req.user._id.toString() &&
-      ![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(
-        req.user.role as UserRole,
-      )
-    ) {
+    const isAuthor = post.authorId._id.toString() === req.user._id.toString();
+    const isAdmin = [UserRole.MOD, UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role as UserRole);
+
+    if (!isAuthor && !isAdmin) {
       throw new BadRequestException({
         message: 'You do not have permission to update this post',
         message_key: POSTS_MESSAGE_KEYS.POST_UPDATE_FAILED,
@@ -229,13 +245,21 @@ export class PostsController {
       });
     }
 
+    console.log('Debug info:');
+    console.log('Post author ID:', post.authorId);
+    console.log('Post author ID type:', typeof post.authorId);
+    console.log('User ID from request:', req.user._id);
+    console.log('User ID type:', typeof req.user._id);
+    console.log('User role:', req.user.role);
+
     // Kiểm tra quyền xóa bài viết
-    if (
-      post.authorId.toString() !== req.user._id.toString() &&
-      ![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(
-        req.user.role as UserRole,
-      )
-    ) {
+    const isAuthor = post.authorId._id.toString() === req.user._id.toString();
+    const isAdmin = [UserRole.MOD, UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role as UserRole);
+
+    console.log('Is author:', isAuthor);
+    console.log('Is admin:', isAdmin);
+
+    if (!isAuthor && !isAdmin) {
       throw new BadRequestException({
         message: 'You do not have permission to delete this post',
         message_key: POSTS_MESSAGE_KEYS.POST_DELETE_FAILED,

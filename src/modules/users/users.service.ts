@@ -16,6 +16,8 @@ import {
 } from './interfaces/user-query.interface';
 import * as bcrypt from 'bcrypt';
 import { USERS_MESSAGE_KEYS } from './constants/message-keys';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UsersService {
@@ -260,5 +262,40 @@ export class UsersService {
       limit,
       totalPages,
     };
+  }
+
+  async uploadAvatar(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<string> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!file || !file.buffer) {
+      throw new BadRequestException('Invalid file upload');
+    }
+
+    // Tạo tên file mới với timestamp để tránh trùng lặp
+    const timestamp = Date.now();
+    const fileName = `${timestamp}-${file.originalname}`;
+    const uploadDir = path.join(process.cwd(), 'uploads', 'users');
+
+    // Đảm bảo thư mục tồn tại
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Lưu file
+    const filePath = path.join(uploadDir, fileName);
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Cập nhật avatar trong database (chỉ lưu tên file)
+    await this.userModel.findByIdAndUpdate(userId, {
+      avatar: fileName,
+    });
+
+    return fileName;
   }
 }

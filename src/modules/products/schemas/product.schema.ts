@@ -17,7 +17,7 @@ export class Product {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   slug: string;
 
   @Prop({ required: true })
@@ -80,7 +80,8 @@ export const ProductSchema = SchemaFactory.createForClass(Product);
 
 // Tạo index cho các trường thường dùng để tìm kiếm
 ProductSchema.index({ name: 'text', slug: 'text', tags: 'text' });
-ProductSchema.index({ price: 1 });
+ProductSchema.index({ slug: 1 }, { unique: true });
 ProductSchema.index({ categoryId: 1 });
+ProductSchema.index({ price: 1 });
 ProductSchema.index({ isActive: 1 });
 ProductSchema.index({ status: 1 });

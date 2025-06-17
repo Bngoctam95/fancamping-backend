@@ -10,7 +10,7 @@ export class Category {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   slug: string;
 
   @Prop()
@@ -34,5 +34,4 @@ export const CategorySchema = SchemaFactory.createForClass(Category);
 // Indexes
 CategorySchema.index({ slug: 1 }, { unique: true });
 CategorySchema.index({ type: 1 });
-CategorySchema.index({ isActive: 1 });
 CategorySchema.index({ order: 1 });

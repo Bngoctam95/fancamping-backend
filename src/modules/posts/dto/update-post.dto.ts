@@ -47,7 +47,7 @@ export class UpdatePostDto {
   @IsOptional()
   slug?: string;
 
-  @IsEnum(['draft', 'published', 'archived'])
+  @IsEnum(['draft', 'pending', 'published', 'archived'])
   @IsOptional()
-  status?: 'draft' | 'published' | 'archived';
+  status?: 'draft' | 'pending' | 'published' | 'archived';
 }

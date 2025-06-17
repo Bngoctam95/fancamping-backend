@@ -16,27 +16,16 @@ export interface ImageConfig {
 }
 
 export const UPLOAD_CONFIG = {
-  thumbnail: {
-    maxSize: 5 * 1024 * 1024, // 5MB
+  avatar: {
+    maxSize: 2 * 1024 * 1024, // 2MB
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'] as string[],
     dimensions: {
-      width: 800,
+      width: 400,
       height: 400,
       fit: 'cover' as const,
     },
     quality: 90,
-    path: 'posts/thumbnails',
-  },
-  content: {
-    maxSize: 5 * 1024 * 1024,
-    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'] as string[],
-    dimensions: {
-      width: 1200,
-      height: 800,
-      fit: 'inside' as const,
-    },
-    quality: 90,
-    path: 'posts/images',
+    path: 'users',
   },
 } as const;
 
@@ -61,26 +50,17 @@ export const fileFilter = (
   callback: (error: Error | null, acceptFile: boolean) => void,
 ) => {
   // Kiểm tra type của file
-  if (!UPLOAD_CONFIG.thumbnail.allowedTypes.includes(file.mimetype)) {
+  if (!UPLOAD_CONFIG.avatar.allowedTypes.includes(file.mimetype)) {
     return callback(new Error('Only image files are allowed!'), false);
   }
   callback(null, true);
 };
 
-// Cấu hình Multer cho thumbnail
-export const thumbnailMulterConfig: MulterOptions = {
+// Cấu hình Multer cho avatar
+export const avatarMulterConfig: MulterOptions = {
   limits: {
-    fileSize: UPLOAD_CONFIG.thumbnail.maxSize,
+    fileSize: UPLOAD_CONFIG.avatar.maxSize,
   },
   fileFilter: fileFilter,
   storage: memoryStorage(),
-};
-
-// Cấu hình Multer cho content images
-export const contentImageMulterConfig: MulterOptions = {
-  limits: {
-    fileSize: UPLOAD_CONFIG.content.maxSize,
-  },
-  fileFilter: fileFilter,
-  storage: memoryStorage(),
-};
+}; 
