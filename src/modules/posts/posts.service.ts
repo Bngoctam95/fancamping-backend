@@ -24,7 +24,7 @@ export class PostsService {
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
     @InjectModel(Like.name) private likeModel: Model<LikeDocument>,
-  ) { }
+  ) {}
 
   // Post methods
   async create(
@@ -38,11 +38,21 @@ export class PostsService {
       throw new BadRequestException('Category not found');
     }
 
+    // Validate status for user role
+    if (
+      createPostDto.status &&
+      !['draft', 'pending'].includes(createPostDto.status)
+    ) {
+      throw new BadRequestException(
+        'Invalid status. Only draft or pending is allowed',
+      );
+    }
+
     const post = new this.postModel({
       ...createPostDto,
       authorId,
       published: false,
-      status: 'draft',
+      status: createPostDto.status || 'draft', // Use provided status or default to draft
     });
 
     return post.save();
@@ -116,6 +126,11 @@ export class PostsService {
       }
     }
 
+    // Validate status if provided
+    if (updatePostDto.status && !['draft', 'pending', 'published', 'archived'].includes(updatePostDto.status)) {
+      throw new BadRequestException('Invalid status. Only draft, pending, published, or archived is allowed');
+    }
+
     const updatedPost = await this.postModel
       .findByIdAndUpdate(id, updatePostDto, { new: true, runValidators: true })
       .populate('authorId', 'name email')
@@ -134,7 +149,7 @@ export class PostsService {
     if (!post) {
       throw new NotFoundException('Post not found');
     }
-    
+
     await this.postModel.deleteOne({ _id: id });
     return post;
   }
@@ -167,7 +182,10 @@ export class PostsService {
     }
   }
 
-  async findAllCategories(isActive?: boolean | string, type?: string): Promise<Category[]> {
+  async findAllCategories(
+    isActive?: boolean | string,
+    type?: string,
+  ): Promise<Category[]> {
     const query: any = {};
 
     // Filter by isActive
@@ -180,10 +198,7 @@ export class PostsService {
       query.type = type;
     }
 
-    return this.categoryModel
-      .find(query)
-      .sort({ order: 1, name: 1 })
-      .exec();
+    return this.categoryModel.find(query).sort({ order: 1, name: 1 }).exec();
   }
 
   async findCategoryById(id: string): Promise<Category> {
@@ -259,7 +274,9 @@ export class PostsService {
     }
 
     // Xóa danh mục
-    const deletedCategory = await this.categoryModel.findByIdAndDelete(id).exec();
+    const deletedCategory = await this.categoryModel
+      .findByIdAndDelete(id)
+      .exec();
 
     if (!deletedCategory) {
       throw new NotFoundException({

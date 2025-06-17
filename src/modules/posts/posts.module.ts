@@ -21,4 +21,4 @@ import { Like, LikeSchema } from './schemas/like.schema';
   providers: [PostsService, UploadService],
   exports: [PostsService],
 })
-export class PostsModule { }
+export class PostsModule {}

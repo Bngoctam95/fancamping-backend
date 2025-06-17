@@ -12,8 +12,14 @@ import {
   NotFoundException,
   Query,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Req,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
+import { UploadService } from './services/upload.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -30,6 +36,7 @@ import { ApiResponse } from '../../interfaces/api-response.interface';
 import { User } from './schemas/user.schema';
 import { USERS_MESSAGE_KEYS } from './constants/message-keys';
 import { COMMON_MESSAGE_KEYS } from '../../constants/common-message-keys';
+import { avatarMulterConfig } from './config/upload.config';
 
 // Interface cho Request với thông tin user
 interface RequestWithUser extends ExpressRequest {
@@ -43,7 +50,10 @@ interface RequestWithUser extends ExpressRequest {
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Post()
   @Roles(UserRole.MOD, UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -342,6 +352,30 @@ export class UsersController {
       message: 'Xóa người dùng thành công',
       message_key: USERS_MESSAGE_KEYS.USER_DELETED,
       data: result,
+    };
+  }
+
+  @Post('upload/avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file', avatarMulterConfig))
+  async uploadAvatar(
+    @Req() req: RequestWithUser,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ApiResponse<{ avatar: string }>> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const fileName = await this.uploadService.processAndSaveAvatar(file);
+    await this.usersService.update(req.user._id.toString(), {
+      avatar: fileName,
+    });
+
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Upload avatar thành công',
+      message_key: USERS_MESSAGE_KEYS.USER_UPDATED,
+      data: { avatar: fileName },
     };
   }
 }
