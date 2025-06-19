@@ -53,4 +53,4 @@ export class UploadService {
       console.error('Failed to delete file:', error);
     }
   }
-} 
+}

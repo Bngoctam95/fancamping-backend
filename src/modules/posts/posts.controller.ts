@@ -194,6 +194,17 @@ export class PostsController {
     };
   }
 
+  @Get('slug/:slug')
+  async findOneBySlug(@Param('slug') slug: string): Promise<ApiResponse<PostSchema>> {
+    const post = await this.postsService.findPostBySlug(slug);
+    return {
+      statusCode: 200,
+      message: 'Post retrieved successfully',
+      message_key: POSTS_MESSAGE_KEYS.POST_FETCH_SUCCESS,
+      data: post,
+    };
+  }
+
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   async update(
@@ -212,7 +223,11 @@ export class PostsController {
 
     // Kiểm tra quyền sửa bài viết
     const isAuthor = post.authorId._id.toString() === req.user._id.toString();
-    const isAdmin = [UserRole.MOD, UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role as UserRole);
+    const isAdmin = [
+      UserRole.MOD,
+      UserRole.ADMIN,
+      UserRole.SUPER_ADMIN,
+    ].includes(req.user.role as UserRole);
 
     if (!isAuthor && !isAdmin) {
       throw new BadRequestException({
@@ -245,16 +260,13 @@ export class PostsController {
       });
     }
 
-    console.log('Debug info:');
-    console.log('Post author ID:', post.authorId);
-    console.log('Post author ID type:', typeof post.authorId);
-    console.log('User ID from request:', req.user._id);
-    console.log('User ID type:', typeof req.user._id);
-    console.log('User role:', req.user.role);
-
     // Kiểm tra quyền xóa bài viết
     const isAuthor = post.authorId._id.toString() === req.user._id.toString();
-    const isAdmin = [UserRole.MOD, UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role as UserRole);
+    const isAdmin = [
+      UserRole.MOD,
+      UserRole.ADMIN,
+      UserRole.SUPER_ADMIN,
+    ].includes(req.user.role as UserRole);
 
     console.log('Is author:', isAuthor);
     console.log('Is admin:', isAdmin);
