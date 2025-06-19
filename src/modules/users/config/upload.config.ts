@@ -63,4 +63,4 @@ export const avatarMulterConfig: MulterOptions = {
   },
   fileFilter: fileFilter,
   storage: memoryStorage(),
-}; 
+};

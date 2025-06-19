@@ -53,7 +53,7 @@ export class UpdatePostDto {
   @IsOptional()
   status?: 'draft' | 'pending' | 'published' | 'archived' | 'rejected';
 
-  @ValidateIf(o => o.status === 'rejected')
+  @ValidateIf((o) => o.status === 'rejected')
   @IsNotEmpty({ message: 'Rejection reason is required when rejecting a post' })
   @IsString()
   rejectionReason?: string;

@@ -9,6 +9,7 @@ export const POSTS_MESSAGE_KEYS = {
   POST_DELETE_FAILED: 'posts.delete_failed',
   POST_FETCH_SUCCESS: 'posts.fetch_success',
   POST_FETCH_ALL_SUCCESS: 'posts.fetch_all_success',
+  POST_ALREADY_EXISTS: 'posts.already_exists',
 
   // Category messages
   CATEGORY_NOT_FOUND: 'posts.category.not_found',

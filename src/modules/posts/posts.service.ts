@@ -24,7 +24,7 @@ export class PostsService {
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
     @InjectModel(Like.name) private likeModel: Model<LikeDocument>,
-  ) { }
+  ) {}
 
   // Post methods
   async create(
@@ -36,6 +36,17 @@ export class PostsService {
     );
     if (!category) {
       throw new BadRequestException('Category not found');
+    }
+
+    // Check for duplicate slug
+    const existingPost = await this.postModel.findOne({
+      slug: createPostDto.slug,
+    });
+    if (existingPost) {
+      throw new ConflictException({
+        message: 'Post with this slug already exists',
+        message_key: POSTS_MESSAGE_KEYS.POST_ALREADY_EXISTS,
+      });
     }
 
     // Validate status for user role
@@ -91,7 +102,10 @@ export class PostsService {
 
     return this.postModel
       .find(filter)
-      .populate('authorId', 'name email')
+      .populate({
+        path: 'authorId',
+        select: 'name email avatar',
+      })
       .populate('categoryId', 'name')
       .sort({ createdAt: -1 })
       .exec();
@@ -100,12 +114,29 @@ export class PostsService {
   async findOne(id: string): Promise<Post> {
     const post = await this.postModel
       .findById(id)
-      .populate('authorId', 'name email')
+      .populate('authorId', 'name email avatar')
       .populate('categoryId', 'name')
       .exec();
 
     if (!post) {
       throw new NotFoundException('Post not found');
+    }
+
+    return post;
+  }
+
+  async findPostBySlug(slug: string): Promise<Post> {
+    const post = await this.postModel
+      .findOne({ slug })
+      .populate('authorId', 'name email avatar')
+      .populate('categoryId', 'name')
+      .exec();
+
+    if (!post) {
+      throw new NotFoundException({
+        message: 'Post not found',
+        message_key: POSTS_MESSAGE_KEYS.POST_NOT_FOUND,
+      });
     }
 
     return post;
@@ -127,18 +158,27 @@ export class PostsService {
     }
 
     // Validate status if provided
-    if (updatePostDto.status && !['draft', 'pending', 'published', 'archived', 'rejected'].includes(updatePostDto.status)) {
-      throw new BadRequestException('Invalid status. Only draft, pending, published, archived, or rejected is allowed');
+    if (
+      updatePostDto.status &&
+      !['draft', 'pending', 'published', 'archived', 'rejected'].includes(
+        updatePostDto.status,
+      )
+    ) {
+      throw new BadRequestException(
+        'Invalid status. Only draft, pending, published, archived, or rejected is allowed',
+      );
     }
 
     // If status is being changed to rejected, ensure rejection reason is provided
     if (updatePostDto.status === 'rejected' && !updatePostDto.rejectionReason) {
-      throw new BadRequestException('Rejection reason is required when rejecting a post');
+      throw new BadRequestException(
+        'Rejection reason is required when rejecting a post',
+      );
     }
 
     const updatedPost = await this.postModel
       .findByIdAndUpdate(id, updatePostDto, { new: true, runValidators: true })
-      .populate('authorId', 'name email')
+      .populate('authorId', 'name email avatar')
       .populate('categoryId', 'name')
       .exec();
 
